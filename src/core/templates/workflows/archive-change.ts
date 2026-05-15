@@ -82,6 +82,12 @@ export function getArchiveChangeSkillTemplate(): SkillTemplate {
    - If yes: Fail with error, suggest renaming existing archive or using different date
    - If no: Move \`changeRoot\` to the archive directory
 
+   Before moving the change, run:
+   \`\`\`bash
+   openspec sdd sync --change "<name>"
+   \`\`\`
+   If the command reports that the mirror was skipped because the change has no SDD metadata, continue with the official archive flow for legacy changes.
+
    \`\`\`bash
    mv "<changeRoot>" "<planningHome.changesDir>/archive/YYYY-MM-DD-<name>"
    \`\`\`
@@ -199,6 +205,12 @@ export function getOpsxArchiveCommandTemplate(): CommandTemplate {
    **Check if target already exists:**
    - If yes: Fail with error, suggest renaming existing archive or using different date
    - If no: Move \`changeRoot\` to the archive directory
+
+   Before moving the change, run:
+   \`\`\`bash
+   openspec sdd sync --change "<name>"
+   \`\`\`
+   If the command reports that the mirror was skipped because the change has no SDD metadata, continue with the official archive flow for legacy changes.
 
    \`\`\`bash
    mv "<changeRoot>" "<planningHome.changesDir>/archive/YYYY-MM-DD-<name>"

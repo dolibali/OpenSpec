@@ -13,6 +13,7 @@ import {
   type PlanningHome,
 } from '../../core/planning-home.js';
 import { validateSchemaExists } from './shared.js';
+import { buildSddMetadata, isSddRequired, syncSddMirror } from '../../core/sdd.js';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -23,6 +24,7 @@ export interface NewChangeOptions {
   goal?: string;
   areas?: string;
   schema?: string;
+  jira?: string;
 }
 
 // -----------------------------------------------------------------------------
@@ -72,6 +74,12 @@ export async function newChangeCommand(name: string | undefined, options: NewCha
   const projectRoot = planningHome.root;
   const affectedAreas = parseAffectedAreas(options.areas);
   validateWorkspaceAffectedAreas(planningHome, affectedAreas);
+  const sddRequired = isSddRequired(projectRoot);
+  const sddMetadata = options.jira ? buildSddMetadata(name, options.jira) : undefined;
+
+  if (sddRequired && !sddMetadata) {
+    throw new Error("Missing required option --jira. Provide a Jira key such as DSH-618, or set 'sdd.required: false' in openspec/config.yaml.");
+  }
 
   // Validate schema if provided
   if (options.schema) {
@@ -93,6 +101,7 @@ export async function newChangeCommand(name: string | undefined, options: NewCha
       metadata: {
         ...(workspaceGoal ? { goal: workspaceGoal } : {}),
         ...(affectedAreas.length > 0 ? { affected_areas: affectedAreas } : {}),
+        ...(sddMetadata ? { sdd: sddMetadata } : {}),
       },
     });
 
@@ -106,6 +115,13 @@ export async function newChangeCommand(name: string | undefined, options: NewCha
     const location = formatChangeLocation(planningHome, name);
     const scope = planningHome.kind === 'workspace' ? 'workspace change' : 'change';
     spinner.succeed(`Created ${scope} '${name}' at ${location}/ (schema: ${result.schema})`);
+
+    if (sddMetadata) {
+      const syncResult = await syncSddMirror(projectRoot, name, planningHome.changesDir);
+      if (syncResult.status === 'synced') {
+        console.log(`SDD mirror: ${path.relative(projectRoot, syncResult.targetDir)}`);
+      }
+    }
 
     if (planningHome.kind === 'workspace') {
       if (affectedAreas.length > 0) {

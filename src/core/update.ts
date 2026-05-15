@@ -270,7 +270,7 @@ export class UpdateCommand {
     if (newlyConfiguredTools.length > 0) {
       console.log();
       console.log(chalk.bold('Getting started:'));
-      console.log('  /opsx:new       Start a new change');
+      console.log('  /opsx:new DSH-618  Start a new change');
       console.log('  /opsx:continue  Create the next artifact');
       console.log('  /opsx:apply     Implement tasks');
       console.log();

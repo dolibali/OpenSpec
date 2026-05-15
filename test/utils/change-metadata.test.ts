@@ -36,6 +36,21 @@ describe('ChangeMetadataSchema', () => {
         expect(result.data.created).toBeUndefined();
       }
     });
+
+    it('should accept SDD mirror metadata', () => {
+      const result = ChangeMetadataSchema.safeParse({
+        schema: 'spec-driven',
+        sdd: {
+          jira: 'DSH-618',
+          directory: 'JIRA_DSH-618_add-login-code',
+          change: 'add-login-code',
+        },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.sdd?.jira).toBe('DSH-618');
+      }
+    });
   });
 
   describe('invalid metadata', () => {

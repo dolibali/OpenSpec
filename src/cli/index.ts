@@ -35,6 +35,9 @@ import {
   type SchemasOptions,
   type NewChangeOptions,
 } from '../commands/workflow/index.js';
+import { resolveCurrentPlanningHomeSync } from '../core/planning-home.js';
+import { syncSddMirror } from '../core/sdd.js';
+import { validateChangeExists } from '../commands/workflow/shared.js';
 import { maybeShowTelemetryNotice, trackCommand, shutdown } from '../telemetry/index.js';
 
 const program = new Command();
@@ -511,9 +514,40 @@ newCmd
   .option('--goal <text>', 'Workspace product goal to store with the change')
   .option('--areas <names>', 'Comma-separated affected workspace link names')
   .option('--schema <name>', `Workflow schema to use (default: ${DEFAULT_SCHEMA})`)
+  .option('--jira <key>', 'Jira key for the enterprise SDD mirror (e.g., DSH-618)')
   .action(async (name: string, options: NewChangeOptions) => {
     try {
       await newChangeCommand(name, options);
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+const sddCmd = program
+  .command('sdd', { hidden: true })
+  .description('Internal SDD mirror commands');
+
+sddCmd
+  .command('sync')
+  .description('Synchronize the enterprise SDD mirror for a change')
+  .option('--change <id>', 'Change name to synchronize')
+  .action(async (options?: { change?: string }) => {
+    try {
+      const planningHome = resolveCurrentPlanningHomeSync();
+      const changeName = await validateChangeExists(
+        options?.change,
+        planningHome.root,
+        planningHome.changesDir
+      );
+      const result = await syncSddMirror(planningHome.root, changeName, planningHome.changesDir);
+
+      if (result.status === 'synced') {
+        console.log(`SDD mirror updated: ${path.relative(planningHome.root, result.targetDir)}`);
+      } else {
+        console.log(`SDD mirror skipped: ${result.reason}`);
+      }
     } catch (error) {
       console.log();
       ora().fail(`Error: ${(error as Error).message}`);

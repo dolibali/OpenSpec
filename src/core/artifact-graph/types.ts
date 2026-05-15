@@ -55,6 +55,15 @@ export const ChangeMetadataSchema = z.object({
   // artifacts as the source of planning detail.
   goal: z.string().min(1).optional(),
   affected_areas: z.array(z.string().min(1)).optional(),
+
+  // Optional enterprise SDD mirror metadata. This keeps the official OpenSpec
+  // change directory as the source while linking it to the repo-root specs/
+  // directory used for company SDD review.
+  sdd: z.object({
+    jira: z.string().min(1),
+    directory: z.string().min(1),
+    change: z.string().min(1),
+  }).optional(),
 });
 
 export type ChangeMetadata = z.infer<typeof ChangeMetadataSchema>;

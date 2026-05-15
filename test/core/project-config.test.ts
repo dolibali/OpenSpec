@@ -39,6 +39,8 @@ rules:
     - Identify affected teams
   specs:
     - Use Given/When/Then format
+sdd:
+  required: false
 `
         );
 
@@ -50,6 +52,9 @@ rules:
           rules: {
             proposal: ['Include rollback plan', 'Identify affected teams'],
             specs: ['Use Given/When/Then format'],
+          },
+          sdd: {
+            required: false,
           },
         });
         expect(consoleWarnSpy).not.toHaveBeenCalled();
@@ -66,6 +71,27 @@ rules:
           schema: 'spec-driven',
         });
         expect(consoleWarnSpy).not.toHaveBeenCalled();
+      });
+
+      it('should warn when sdd.required is invalid', () => {
+        const configDir = path.join(tempDir, 'openspec');
+        fs.mkdirSync(configDir, { recursive: true });
+        fs.writeFileSync(
+          path.join(configDir, 'config.yaml'),
+          `schema: spec-driven
+sdd:
+  required: "yes"
+`
+        );
+
+        const config = readProjectConfig(tempDir);
+
+        expect(config).toEqual({
+          schema: 'spec-driven',
+        });
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining("Invalid 'sdd.required' field")
+        );
       });
 
       it('should return partial config when schema is invalid', () => {

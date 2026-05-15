@@ -178,12 +178,12 @@ Now let's create a change to hold our work.
 
 A "change" in OpenSpec is a container for all the thinking and planning around a piece of work. It lives at the \`changeRoot\` reported by \`openspec status --change "<name>" --json\` and holds your artifacts—proposal, specs, design, tasks.
 
-Let me create one for our task.
+Let me create one for our task. I need the Jira key first; ask the user for it if it is not already clear from the conversation.
 \`\`\`
 
-**DO:** Create the change with a derived kebab-case name:
+**DO:** Create the change with a derived kebab-case name and the Jira key:
 \`\`\`bash
-openspec new change "<derived-name>"
+openspec new change "<derived-name>" --jira "<jira>"
 \`\`\`
 
 **SHOW:**
@@ -477,7 +477,7 @@ This same rhythm works for any size change—a small fix or a major feature.
 
  | Command           | What it does                               |
  |-------------------|--------------------------------------------|
- | \`/opsx:propose\` | Create a change and generate all artifacts |
+ | \`/opsx:propose DSH-618 <name>\` | Create a change and generate all artifacts |
  | \`/opsx:explore\` | Think through problems before/during work  |
  | \`/opsx:apply\`   | Implement tasks from a change              |
  | \`/opsx:archive\` | Archive a completed change                 |
@@ -495,7 +495,7 @@ This same rhythm works for any size change—a small fix or a major feature.
 
 ## What's Next?
 
-Try \`/opsx:propose\` on something you actually want to build. You've got the rhythm now!
+Try \`/opsx:propose DSH-618 <what-you-want>\` on something you actually want to build. You've got the rhythm now!
 \`\`\`
 
 ---
@@ -529,7 +529,7 @@ If the user says they just want to see the commands or skip the tutorial:
 
  | Command                  | What it does                               |
  |--------------------------|--------------------------------------------|
- | \`/opsx:propose <name>\` | Create a change and generate all artifacts |
+ | \`/opsx:propose DSH-618 <name>\` | Create a change and generate all artifacts |
  | \`/opsx:explore\`        | Think through problems (no code changes)   |
  | \`/opsx:apply <name>\`   | Implement tasks                            |
  | \`/opsx:archive <name>\` | Archive when done                          |
@@ -538,12 +538,12 @@ If the user says they just want to see the commands or skip the tutorial:
 
  | Command                   | What it does                        |
  |---------------------------|-------------------------------------|
- | \`/opsx:new <name>\`      | Start a new change, step by step    |
+ | \`/opsx:new DSH-618 <name>\` | Start a new change, step by step |
  | \`/opsx:continue <name>\` | Continue an existing change         |
  | \`/opsx:ff <name>\`       | Fast-forward: all artifacts at once |
  | \`/opsx:verify <name>\`   | Verify implementation               |
 
-Try \`/opsx:propose\` to start your first change.
+Try \`/opsx:propose DSH-618 <what-you-want>\` to start your first change.
 \`\`\`
 
 Exit gracefully.

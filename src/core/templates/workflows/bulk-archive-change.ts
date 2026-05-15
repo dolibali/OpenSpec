@@ -130,9 +130,11 @@ This skill allows you to batch-archive changes, handling spec conflicts intellig
 
    b. **Perform the archive**:
       \`\`\`bash
+      openspec sdd sync --change "<change-name>"
       mkdir -p "<planningHome.changesDir>/archive"
       mv "<changeRoot>" "<planningHome.changesDir>/archive/YYYY-MM-DD-<name>"
       \`\`\`
+      If SDD sync reports that the mirror was skipped because a legacy change has no SDD metadata, continue with the official archive move.
 
    c. **Track outcome** for each change:
       - Success: archived successfully
@@ -379,9 +381,11 @@ This skill allows you to batch-archive changes, handling spec conflicts intellig
 
    b. **Perform the archive**:
       \`\`\`bash
+      openspec sdd sync --change "<change-name>"
       mkdir -p "<planningHome.changesDir>/archive"
       mv "<changeRoot>" "<planningHome.changesDir>/archive/YYYY-MM-DD-<name>"
       \`\`\`
+      If SDD sync reports that the mirror was skipped because a legacy change has no SDD metadata, continue with the official archive move.
 
    c. **Track outcome** for each change:
       - Success: archived successfully

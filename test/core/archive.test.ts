@@ -94,6 +94,35 @@ describe('ArchiveCommand', () => {
       );
     });
 
+    it('should sync SDD mirror before archiving a Jira-backed change', async () => {
+      const changeName = 'jira-feature';
+      const changeDir = path.join(tempDir, 'openspec', 'changes', changeName);
+      await fs.mkdir(changeDir, { recursive: true });
+
+      await fs.writeFile(
+        path.join(changeDir, '.openspec.yaml'),
+        `schema: spec-driven
+sdd:
+  jira: DSH-700
+  directory: JIRA_DSH-700_jira-feature
+  change: jira-feature
+`,
+        'utf-8'
+      );
+      await fs.writeFile(path.join(changeDir, 'proposal.md'), '## Why\nBecause this is needed.\n\n## What Changes\n- Add Jira-backed flow.\n');
+      await fs.writeFile(path.join(changeDir, 'tasks.md'), '- [x] Task 1\n');
+      await fs.writeFile(path.join(changeDir, 'design.md'), '# Design\n');
+
+      await archiveCommand.execute(changeName, { yes: true, noValidate: true });
+
+      const mirrorDir = path.join(tempDir, 'specs', 'JIRA_DSH-700_jira-feature');
+      const mirrorDesign = await fs.readFile(path.join(mirrorDir, 'design.md'), 'utf-8');
+      expect(mirrorDesign).toBe('# Design\n');
+      expect(console.log).toHaveBeenCalledWith(
+        expect.stringContaining('SDD mirror updated: specs/JIRA_DSH-700_jira-feature')
+      );
+    });
+
     it('should update specs when archiving (delta-based ADDED) and include change name in skeleton', async () => {
       const changeName = 'spec-feature';
       const changeDir = path.join(tempDir, 'openspec', 'changes', changeName);

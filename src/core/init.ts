@@ -703,10 +703,10 @@ export class InitCommand {
     console.log();
     if (activeWorkflows.includes('propose')) {
       console.log(chalk.bold('Getting started:'));
-      console.log('  Start your first change: /opsx:propose "your idea"');
+      console.log('  Start your first change: /opsx:propose DSH-618 "your idea"');
     } else if (activeWorkflows.includes('new')) {
       console.log(chalk.bold('Getting started:'));
-      console.log('  Start your first change: /opsx:new "your idea"');
+      console.log('  Start your first change: /opsx:new DSH-618 "your idea"');
     } else {
       console.log("Done. Run 'openspec config profile' to configure your workflows.");
     }

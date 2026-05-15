@@ -14,6 +14,14 @@ export function serializeConfig(config: Partial<ProjectConfig>): string {
   lines.push('');
 
   // Context section with comments
+  lines.push('# Enterprise SDD mirror (optional)');
+  lines.push('# This fork requires Jira by default when creating changes.');
+  lines.push('# Set to false only for repositories that should not create specs/JIRA_* mirrors.');
+  lines.push('sdd:');
+  lines.push('  required: true');
+  lines.push('');
+
+  // Context section with comments
   lines.push('# Project context (optional)');
   lines.push('# This is shown to AI when creating artifacts.');
   lines.push('# Add your tech stack, conventions, style guides, domain knowledge, etc.');

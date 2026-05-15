@@ -9,6 +9,7 @@ import {
   writeUpdatedSpec,
   type SpecUpdate,
 } from './specs-apply.js';
+import { syncSddMirror } from './sdd.js';
 
 /**
  * Recursively copy a directory. Used when fs.rename fails (e.g. EPERM on Windows).
@@ -53,9 +54,10 @@ export class ArchiveCommand {
     options: { yes?: boolean; skipSpecs?: boolean; noValidate?: boolean; validate?: boolean } = {}
   ): Promise<void> {
     const targetPath = '.';
-    const changesDir = path.join(targetPath, 'openspec', 'changes');
+    const projectRoot = path.resolve(targetPath);
+    const changesDir = path.join(projectRoot, 'openspec', 'changes');
     const archiveDir = path.join(changesDir, 'archive');
-    const mainSpecsDir = path.join(targetPath, 'openspec', 'specs');
+    const mainSpecsDir = path.join(projectRoot, 'openspec', 'specs');
 
     // Check if changes directory exists
     try {
@@ -280,6 +282,11 @@ export class ArchiveCommand {
 
     // Create archive directory if needed
     await fs.mkdir(archiveDir, { recursive: true });
+
+    const sddSync = await syncSddMirror(projectRoot, changeName, changesDir);
+    if (sddSync.status === 'synced') {
+      console.log(`SDD mirror updated: ${path.relative(projectRoot, sddSync.targetDir)}`);
+    }
 
     // Move change to archive (uses copy+remove on EPERM/EXDEV, e.g. Windows)
     await moveDirectory(changeDir, archivePath);

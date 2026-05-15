@@ -75,6 +75,7 @@ export function getApplyChangeSkillTemplate(): SkillTemplate {
    - Make the code changes required
    - Keep changes minimal and focused
    - Mark task complete in the tasks file: \`- [ ]\` → \`- [x]\`
+   - Run \`openspec sdd sync --change "<name>"\` after updating the tasks file
    - Continue to next task
 
    **Pause if:**
@@ -235,6 +236,7 @@ export function getOpsxApplyCommandTemplate(): CommandTemplate {
    - Make the code changes required
    - Keep changes minimal and focused
    - Mark task complete in the tasks file: \`- [ ]\` → \`- [x]\`
+   - Run \`openspec sdd sync --change "<name>"\` after updating the tasks file
    - Continue to next task
 
    **Pause if:**

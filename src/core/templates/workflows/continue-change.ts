@@ -70,6 +70,7 @@ export function getContinueChangeSkillTemplate(): SkillTemplate {
      - Use \`template\` as the structure - fill in its sections
      - Apply \`context\` and \`rules\` as constraints when writing - but do NOT copy them into the file
      - Write to the \`resolvedOutputPath\` specified in instructions. If it is a glob pattern, choose the concrete file path using the schema instruction and workspace planning context
+     - Run \`openspec sdd sync --change "<name>"\` after writing the artifact to update the repo-root SDD mirror
    - Show what was created and what's now unlocked
    - STOP after creating ONE artifact
 
@@ -190,6 +191,7 @@ export function getOpsxContinueCommandTemplate(): CommandTemplate {
      - Use \`template\` as the structure - fill in its sections
      - Apply \`context\` and \`rules\` as constraints when writing - but do NOT copy them into the file
      - Write to the \`resolvedOutputPath\` specified in instructions. If it is a glob pattern, choose the concrete file path using the schema instruction and workspace planning context
+     - Run \`openspec sdd sync --change "<name>"\` after writing the artifact to update the repo-root SDD mirror
    - Show what was created and what's now unlocked
    - STOP after creating ONE artifact
 

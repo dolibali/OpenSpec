@@ -331,15 +331,62 @@ describe('artifact-workflow CLI commands', () => {
   });
 
   describe('new change command', () => {
-    it('creates a new change directory', async () => {
-      const result = await runCLI(['new', 'change', 'my-new-feature'], { cwd: tempDir });
+    it('creates a new change directory and SDD mirror', async () => {
+      const result = await runCLI(['new', 'change', 'my-new-feature', '--jira', 'DSH-618'], { cwd: tempDir });
       expect(result.exitCode).toBe(0);
       const output = getOutput(result);
       expect(output).toContain("Created change 'my-new-feature'");
+      expect(output).toContain('SDD mirror: specs/JIRA_DSH-618_my-new-feature');
 
       const changeDir = path.join(changesDir, 'my-new-feature');
       const stat = await fs.stat(changeDir);
       expect(stat.isDirectory()).toBe(true);
+
+      const mirrorDir = path.join(tempDir, 'specs', 'JIRA_DSH-618_my-new-feature');
+      const mirrorStat = await fs.stat(mirrorDir);
+      expect(mirrorStat.isDirectory()).toBe(true);
+      const mirrorMetadata = await fs.readFile(path.join(mirrorDir, '.openspec.yaml'), 'utf-8');
+      expect(mirrorMetadata).toContain('jira: DSH-618');
+      expect(mirrorMetadata).toContain('directory: JIRA_DSH-618_my-new-feature');
+    });
+
+    it('requires Jira by default', async () => {
+      const result = await runCLI(['new', 'change', 'missing-jira'], { cwd: tempDir });
+      expect(result.exitCode).toBe(1);
+      const output = getOutput(result);
+      expect(output).toContain('Missing required option --jira');
+    });
+
+    it('allows missing Jira when SDD is disabled in project config', async () => {
+      await fs.writeFile(
+        path.join(tempDir, 'openspec', 'config.yaml'),
+        `schema: spec-driven
+sdd:
+  required: false
+`
+      );
+
+      const result = await runCLI(['new', 'change', 'sdd-disabled'], { cwd: tempDir });
+      expect(result.exitCode).toBe(0);
+      await expect(fs.stat(path.join(changesDir, 'sdd-disabled'))).resolves.toBeDefined();
+      await expect(fs.stat(path.join(tempDir, 'specs'))).rejects.toMatchObject({ code: 'ENOENT' });
+    });
+
+    it('synchronizes the SDD mirror through the hidden sync command', async () => {
+      const create = await runCLI(['new', 'change', 'sync-target', '--jira', 'DSH-623'], { cwd: tempDir });
+      expect(create.exitCode).toBe(0);
+
+      await fs.writeFile(path.join(changesDir, 'sync-target', 'tasks.md'), '- [x] Task 1\n');
+
+      const sync = await runCLI(['sdd', 'sync', '--change', 'sync-target'], { cwd: tempDir });
+      expect(sync.exitCode).toBe(0);
+      expect(sync.stdout).toContain('SDD mirror updated');
+
+      const mirroredTasks = await fs.readFile(
+        path.join(tempDir, 'specs', 'JIRA_DSH-623_sync-target', 'tasks.md'),
+        'utf-8'
+      );
+      expect(mirroredTasks).toBe('- [x] Task 1\n');
     });
 
     it('creates workspace-planning changes under the workspace root without touching linked repos', async () => {
@@ -374,6 +421,8 @@ describe('artifact-workflow CLI commands', () => {
           'new',
           'change',
           'cross-repo-login',
+          '--jira',
+          'WSP-101',
           '--goal',
           'Unify login across API and web',
           '--areas',
@@ -425,7 +474,7 @@ describe('artifact-workflow CLI commands', () => {
       const workspaceRoot = JSON.parse(setup.stdout).workspace.root;
 
       const create = await runCLI(
-        ['new', 'change', 'nested-workspace-spec', '--goal', 'Plan API login', '--areas', 'api'],
+        ['new', 'change', 'nested-workspace-spec', '--jira', 'WSP-102', '--goal', 'Plan API login', '--areas', 'api'],
         { cwd: workspaceRoot, env: workspaceEnv }
       );
       expect(create.exitCode).toBe(0);
@@ -470,7 +519,7 @@ describe('artifact-workflow CLI commands', () => {
 
     it('creates README.md when --description is provided', async () => {
       const result = await runCLI(
-        ['new', 'change', 'described-feature', '--description', 'This is a test feature'],
+        ['new', 'change', 'described-feature', '--jira', 'DSH-619', '--description', 'This is a test feature'],
         { cwd: tempDir }
       );
       expect(result.exitCode).toBe(0);
@@ -491,7 +540,7 @@ describe('artifact-workflow CLI commands', () => {
     it('errors for duplicate change name', async () => {
       await createTestChange('existing-change');
 
-      const result = await runCLI(['new', 'change', 'existing-change'], { cwd: tempDir });
+      const result = await runCLI(['new', 'change', 'existing-change', '--jira', 'DSH-620'], { cwd: tempDir });
       expect(result.exitCode).toBe(1);
       const output = getOutput(result);
       expect(output).toContain('exists');
@@ -875,7 +924,7 @@ artifacts:
         );
 
         // Create a new change without specifying schema
-        const result = await runCLI(['new', 'change', 'test-change'], { cwd: tempDir, timeoutMs: 30000 });
+        const result = await runCLI(['new', 'change', 'test-change', '--jira', 'DSH-621'], { cwd: tempDir, timeoutMs: 30000 });
         expect(result.exitCode).toBe(0);
 
         // Verify the change was created with spec-driven schema
@@ -894,7 +943,7 @@ artifacts:
 
         // Create change with explicit schema
         const result = await runCLI(
-          ['new', 'change', 'override-test', '--schema', 'spec-driven'],
+          ['new', 'change', 'override-test', '--schema', 'spec-driven', '--jira', 'DSH-622'],
           { cwd: tempDir, timeoutMs: 30000 }
         );
         expect(result.exitCode).toBe(0);
