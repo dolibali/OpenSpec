@@ -187,6 +187,20 @@ describe('config key validation', () => {
     const { validateConfigKeyPath } = await import('../../src/core/config-schema.js');
     expect(validateConfigKeyPath('workflows').valid).toBe(true);
   });
+
+  it('allows SDD nested keys', async () => {
+    const { validateConfigKeyPath } = await import('../../src/core/config-schema.js');
+    expect(validateConfigKeyPath('sdd.enabled').valid).toBe(true);
+    expect(validateConfigKeyPath('sdd.reqIdRequired').valid).toBe(true);
+    expect(validateConfigKeyPath('sdd.root').valid).toBe(true);
+    expect(validateConfigKeyPath('sdd.prefix').valid).toBe(true);
+  });
+
+  it('rejects unknown SDD nested keys', async () => {
+    const { validateConfigKeyPath } = await import('../../src/core/config-schema.js');
+    expect(validateConfigKeyPath('sdd.unknown').valid).toBe(false);
+    expect(validateConfigKeyPath('sdd.root.extra').valid).toBe(false);
+  });
 });
 
 describe('config profile command', () => {
@@ -267,6 +281,7 @@ describe('config profile command', () => {
     expect(validateConfig({ featureFlags: {}, profile: 'core', delivery: 'both' }).success).toBe(true);
     expect(validateConfig({ featureFlags: {}, profile: 'custom', delivery: 'skills' }).success).toBe(true);
     expect(validateConfig({ featureFlags: {}, profile: 'custom', delivery: 'commands', workflows: ['explore'] }).success).toBe(true);
+    expect(validateConfig({ sdd: { enabled: true, reqIdRequired: false, root: 'specs/archive', prefix: '' } }).success).toBe(true);
   });
 
   it('config schema should reject invalid profile values', async () => {
@@ -281,5 +296,13 @@ describe('config profile command', () => {
 
     const result = validateConfig({ featureFlags: {}, delivery: 'invalid' });
     expect(result.success).toBe(false);
+  });
+
+  it('config schema should reject invalid SDD values', async () => {
+    const { validateConfig } = await import('../../src/core/config-schema.js');
+
+    expect(validateConfig({ sdd: { root: '../specs' } }).success).toBe(false);
+    expect(validateConfig({ sdd: { root: '/tmp/specs' } }).success).toBe(false);
+    expect(validateConfig({ sdd: { prefix: 'BAD PREFIX' } }).success).toBe(false);
   });
 });

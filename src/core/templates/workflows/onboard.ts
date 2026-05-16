@@ -178,12 +178,12 @@ Now let's create a change to hold our work.
 
 A "change" in OpenSpec is a container for all the thinking and planning around a piece of work. It lives at the \`changeRoot\` reported by \`openspec status --change "<name>" --json\` and holds your artifacts—proposal, specs, design, tasks.
 
-Let me create one for our task. I need the Jira key first; ask the user for it if it is not already clear from the conversation.
+Let me create one for our task. I need the req id first; ask the user for it if it is not already clear from the conversation. If the user confirms there is no req id for this task, create the change with \`--omit-req-id\`.
 \`\`\`
 
-**DO:** Create the change with a derived kebab-case name and the Jira key:
+**DO:** Create the change with a derived kebab-case name and the req id:
 \`\`\`bash
-openspec new change "<derived-name>" --jira "<jira>"
+openspec new change "<derived-name>" --req-id "<req-id>"
 \`\`\`
 
 **SHOW:**

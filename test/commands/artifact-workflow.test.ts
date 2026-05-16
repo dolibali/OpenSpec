@@ -8,16 +8,20 @@ import { FileSystemUtils } from '../../src/utils/file-system.js';
 describe('artifact-workflow CLI commands', () => {
   let tempDir: string;
   let changesDir: string;
+  let originalEnv: NodeJS.ProcessEnv;
 
   const canonical = (targetPath: string): string => FileSystemUtils.canonicalizeExistingPath(targetPath);
 
   beforeEach(async () => {
+    originalEnv = { ...process.env };
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'openspec-artifact-workflow-'));
+    process.env.XDG_CONFIG_HOME = path.join(tempDir, 'config');
     changesDir = path.join(tempDir, 'openspec', 'changes');
     await fs.mkdir(changesDir, { recursive: true });
   });
 
   afterEach(async () => {
+    process.env = originalEnv;
     if (tempDir) {
       await fs.rm(tempDir, { recursive: true, force: true });
     }
@@ -332,7 +336,7 @@ describe('artifact-workflow CLI commands', () => {
 
   describe('new change command', () => {
     it('creates a new change directory and SDD mirror', async () => {
-      const result = await runCLI(['new', 'change', 'my-new-feature', '--jira', 'DSH-618'], { cwd: tempDir });
+      const result = await runCLI(['new', 'change', 'my-new-feature', '--req-id', 'DSH-618'], { cwd: tempDir });
       expect(result.exitCode).toBe(0);
       const output = getOutput(result);
       expect(output).toContain("Created change 'my-new-feature'");
@@ -346,25 +350,34 @@ describe('artifact-workflow CLI commands', () => {
       const mirrorStat = await fs.stat(mirrorDir);
       expect(mirrorStat.isDirectory()).toBe(true);
       const mirrorMetadata = await fs.readFile(path.join(mirrorDir, '.openspec.yaml'), 'utf-8');
-      expect(mirrorMetadata).toContain('jira: DSH-618');
+      expect(mirrorMetadata).toContain('req_id: DSH-618');
       expect(mirrorMetadata).toContain('directory: JIRA_DSH-618_my-new-feature');
     });
 
-    it('requires Jira by default', async () => {
-      const result = await runCLI(['new', 'change', 'missing-jira'], { cwd: tempDir });
-      expect(result.exitCode).toBe(1);
-      const output = getOutput(result);
-      expect(output).toContain('Missing required option --jira');
+    it('supports the deprecated --jira alias', async () => {
+      const result = await runCLI(['new', 'change', 'legacy-alias-feature', '--jira', 'DSH-619'], { cwd: tempDir });
+      expect(result.exitCode).toBe(0);
+      expect(getOutput(result)).toContain('SDD mirror: specs/JIRA_DSH-619_legacy-alias-feature');
     });
 
-    it('allows missing Jira when SDD is disabled in project config', async () => {
-      await fs.writeFile(
-        path.join(tempDir, 'openspec', 'config.yaml'),
-        `schema: spec-driven
-sdd:
-  required: false
-`
+    it('rejects conflicting SDD id options', async () => {
+      const result = await runCLI(
+        ['new', 'change', 'conflicting-options', '--req-id', 'DSH-618', '--omit-req-id'],
+        { cwd: tempDir }
       );
+      expect(result.exitCode).toBe(1);
+      expect(getOutput(result)).toContain('Use only one of --req-id, --omit-req-id, or deprecated --jira');
+    });
+
+    it('requires req id by default', async () => {
+      const result = await runCLI(['new', 'change', 'missing-req-id'], { cwd: tempDir });
+      expect(result.exitCode).toBe(1);
+      const output = getOutput(result);
+      expect(output).toContain('Missing required option --req-id');
+    });
+
+    it('skips company SDD mirror when global SDD is disabled', async () => {
+      await runCLI(['config', 'set', 'sdd.enabled', 'false'], { cwd: tempDir });
 
       const result = await runCLI(['new', 'change', 'sdd-disabled'], { cwd: tempDir });
       expect(result.exitCode).toBe(0);
@@ -372,8 +385,28 @@ sdd:
       await expect(fs.stat(path.join(tempDir, 'specs'))).rejects.toMatchObject({ code: 'ENOENT' });
     });
 
+    it('creates a company SDD mirror without req id when req id is not required', async () => {
+      await runCLI(['config', 'set', 'sdd.reqIdRequired', 'false'], { cwd: tempDir });
+
+      const result = await runCLI(['new', 'change', 'missing-req-id-ok'], { cwd: tempDir });
+      expect(result.exitCode).toBe(0);
+      expect(getOutput(result)).toContain('SDD mirror: specs/JIRA_missing-req-id-ok');
+      await expect(fs.stat(path.join(tempDir, 'specs', 'JIRA_missing-req-id-ok'))).resolves.toBeDefined();
+    });
+
+    it('creates a company SDD mirror without req id when explicitly omitted', async () => {
+      const result = await runCLI(['new', 'change', 'omit-req-id', '--omit-req-id'], { cwd: tempDir });
+      expect(result.exitCode).toBe(0);
+      expect(getOutput(result)).toContain('SDD mirror: specs/JIRA_omit-req-id');
+      const metadata = await fs.readFile(
+        path.join(tempDir, 'specs', 'JIRA_omit-req-id', '.openspec.yaml'),
+        'utf-8'
+      );
+      expect(metadata).not.toContain('req_id:');
+    });
+
     it('synchronizes the SDD mirror through the hidden sync command', async () => {
-      const create = await runCLI(['new', 'change', 'sync-target', '--jira', 'DSH-623'], { cwd: tempDir });
+      const create = await runCLI(['new', 'change', 'sync-target', '--req-id', 'DSH-623'], { cwd: tempDir });
       expect(create.exitCode).toBe(0);
 
       await fs.writeFile(path.join(changesDir, 'sync-target', 'tasks.md'), '- [x] Task 1\n');
@@ -391,7 +424,7 @@ sdd:
 
     it('creates the company SDD docs directory through the hidden docs command', async () => {
       const result = await runCLI(
-        ['sdd', 'docs', '--jira', 'DSH-618', '--name', 'fix-login-code-error'],
+        ['sdd', 'docs', '--req-id', 'DSH-618', '--name', 'fix-login-code-error'],
         { cwd: tempDir }
       );
       expect(result.exitCode).toBe(0);
@@ -400,7 +433,7 @@ sdd:
       const docsDir = path.join(tempDir, 'specs', 'JIRA_DSH-618_fix-login-code-error');
       const metadata = await fs.readFile(path.join(docsDir, '.openspec.yaml'), 'utf-8');
       expect(metadata).toContain('schema: spec-driven');
-      expect(metadata).toContain('jira: DSH-618');
+      expect(metadata).toContain('req_id: DSH-618');
       expect(metadata).toContain('directory: JIRA_DSH-618_fix-login-code-error');
       expect(metadata).toContain('change: fix-login-code-error');
       expect(metadata).not.toContain('docs-only');
@@ -417,18 +450,59 @@ sdd:
         path.join(docsDir, '.openspec.yaml'),
         `schema: spec-driven
 sdd:
-  jira: DSH-618
+  req_id: DSH-618
   directory: JIRA_DSH-618_other-change
   change: other-change
 `
       );
 
       const result = await runCLI(
-        ['sdd', 'docs', '--jira', 'DSH-618', '--name', 'fix-login-code-error'],
+        ['sdd', 'docs', '--req-id', 'DSH-618', '--name', 'fix-login-code-error'],
         { cwd: tempDir }
       );
       expect(result.exitCode).toBe(1);
       expect(getOutput(result)).toContain('does not belong');
+    });
+
+    it('uses global SDD root and prefix settings', async () => {
+      await runCLI(['config', 'set', 'sdd.root', 'specs/archive'], { cwd: tempDir });
+      await runCLI(['config', 'set', 'sdd.prefix', 'REQ'], { cwd: tempDir });
+
+      const result = await runCLI(['new', 'change', 'custom-sdd-target', '--req-id', 'DSH-624'], {
+        cwd: tempDir,
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(normalizePaths(getOutput(result))).toContain(
+        'SDD mirror: specs/archive/REQ_DSH-624_custom-sdd-target'
+      );
+      await expect(
+        fs.stat(path.join(tempDir, 'specs', 'archive', 'REQ_DSH-624_custom-sdd-target'))
+      ).resolves.toBeDefined();
+    });
+
+    it('omits empty SDD prefix from generated directory names', async () => {
+      await runCLI(['config', 'set', 'sdd.prefix', '', '--string'], { cwd: tempDir });
+
+      const result = await runCLI(['new', 'change', 'empty-prefix-target', '--req-id', 'DSH-625'], {
+        cwd: tempDir,
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(getOutput(result)).toContain('SDD mirror: specs/DSH-625_empty-prefix-target');
+      await expect(fs.stat(path.join(tempDir, 'specs', 'DSH-625_empty-prefix-target'))).resolves.toBeDefined();
+    });
+
+    it('blocks SDD docs when global SDD is disabled', async () => {
+      await runCLI(['config', 'set', 'sdd.enabled', 'false'], { cwd: tempDir });
+
+      const result = await runCLI(
+        ['sdd', 'docs', '--req-id', 'DSH-618', '--name', 'fix-login-code-error'],
+        { cwd: tempDir }
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(getOutput(result)).toContain('Enterprise SDD output is disabled');
     });
 
     it('creates workspace-planning changes under the workspace root without touching linked repos', async () => {

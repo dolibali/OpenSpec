@@ -193,7 +193,7 @@ describe('skill-generation', () => {
 
       expect(template.content).toContain('git diff --stat');
       expect(template.content).toContain('git diff');
-      expect(template.content).toContain('openspec sdd docs --jira "<jira>" --name "<name>"');
+      expect(template.content).toContain('openspec sdd docs --req-id "<req-id>" --name "<name>"');
       expect(template.content).toContain('proposal.md');
       expect(template.content).toContain('design.md');
       expect(template.content).toContain('tasks.md');

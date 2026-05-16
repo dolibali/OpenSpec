@@ -57,10 +57,12 @@ export const ChangeMetadataSchema = z.object({
   affected_areas: z.array(z.string().min(1)).optional(),
 
   // Optional enterprise SDD mirror metadata. This keeps the official OpenSpec
-  // change directory as the source while linking it to the repo-root specs/
-  // directory used for company SDD review.
+  // change directory as the source while linking it to the company SDD review
+  // directory configured in the user's global OpenSpec config. `jira` is
+  // accepted for compatibility with older fork metadata.
   sdd: z.object({
-    jira: z.string().min(1),
+    req_id: z.string().min(1).optional(),
+    jira: z.string().min(1).optional(),
     directory: z.string().min(1),
     change: z.string().min(1),
   }).optional(),

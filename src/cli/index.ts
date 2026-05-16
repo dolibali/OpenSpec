@@ -515,7 +515,9 @@ newCmd
   .option('--goal <text>', 'Workspace product goal to store with the change')
   .option('--areas <names>', 'Comma-separated affected workspace link names')
   .option('--schema <name>', `Workflow schema to use (default: ${DEFAULT_SCHEMA})`)
-  .option('--jira <key>', 'Jira key for the enterprise SDD mirror (e.g., DSH-618)')
+  .option('--req-id <id>', 'Requirement id for the enterprise SDD mirror (e.g., DSH-618)')
+  .option('--omit-req-id', 'Create the enterprise SDD mirror without a requirement id')
+  .option('--jira <key>', 'Deprecated alias for --req-id')
   .action(async (name: string, options: NewChangeOptions) => {
     try {
       await newChangeCommand(name, options);
@@ -559,15 +561,22 @@ sddCmd
 sddCmd
   .command('docs')
   .description('Create the enterprise SDD docs directory for a completed change')
-  .option('--jira <key>', 'Jira key for the enterprise SDD docs directory')
+  .option('--req-id <id>', 'Requirement id for the enterprise SDD docs directory')
+  .option('--omit-req-id', 'Create the enterprise SDD docs directory without a requirement id')
+  .option('--jira <key>', 'Deprecated alias for --req-id')
   .option('--name <change>', 'Change name to use for the enterprise SDD docs directory')
-  .action(async (options?: { jira?: string; name?: string }) => {
+  .action(async (options: { reqId?: string; omitReqId?: boolean; jira?: string; name?: string }) => {
     try {
-      if (!options?.jira) {
-        throw new Error('Missing required option --jira. Provide a Jira key such as DSH-618.');
-      }
       if (!options.name) {
         throw new Error('Missing required option --name. Provide a kebab-case change name.');
+      }
+      const provided = [
+        Boolean(options.reqId),
+        Boolean(options.jira),
+        Boolean(options.omitReqId),
+      ].filter(Boolean).length;
+      if (provided > 1) {
+        throw new Error('Use only one of --req-id, --omit-req-id, or deprecated --jira.');
       }
 
       const validation = validateChangeName(options.name);
@@ -576,7 +585,12 @@ sddCmd
       }
 
       const planningHome = resolveCurrentPlanningHomeSync();
-      const result = await createSddDocsDirectory(planningHome.root, options.name, options.jira);
+      const result = await createSddDocsDirectory(
+        planningHome.root,
+        options.name,
+        options.reqId ?? options.jira,
+        { omitReqId: options.omitReqId }
+      );
       console.log(`SDD docs directory: ${path.relative(planningHome.root, result.targetDir)}`);
     } catch (error) {
       console.log();

@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
+import { DEFAULT_SDD_CONFIG } from './config-schema.js';
 
 // Constants
 export const GLOBAL_CONFIG_DIR_NAME = 'openspec';
@@ -17,12 +18,19 @@ export interface GlobalConfig {
   profile?: Profile;
   delivery?: Delivery;
   workflows?: string[];
+  sdd?: {
+    enabled?: boolean;
+    reqIdRequired?: boolean;
+    root?: string;
+    prefix?: string;
+  };
 }
 
 const DEFAULT_CONFIG: GlobalConfig = {
   featureFlags: {},
   profile: 'core',
   delivery: 'both',
+  sdd: { ...DEFAULT_SDD_CONFIG },
 };
 
 /**
@@ -123,6 +131,10 @@ export function getGlobalConfig(): GlobalConfig {
 
     const content = fs.readFileSync(configPath, 'utf-8');
     const parsed = JSON.parse(content);
+    const parsedSdd =
+      typeof parsed.sdd === 'object' && parsed.sdd !== null && !Array.isArray(parsed.sdd)
+        ? parsed.sdd
+        : {};
 
     // Merge with defaults (loaded values take precedence)
     const merged: GlobalConfig = {
@@ -132,7 +144,11 @@ export function getGlobalConfig(): GlobalConfig {
       featureFlags: {
         ...DEFAULT_CONFIG.featureFlags,
         ...(parsed.featureFlags || {})
-      }
+      },
+      sdd: {
+        ...DEFAULT_CONFIG.sdd,
+        ...parsedSdd,
+      },
     };
 
     // Schema evolution: apply defaults for new fields if not present in loaded config
@@ -141,6 +157,9 @@ export function getGlobalConfig(): GlobalConfig {
     }
     if (parsed.delivery === undefined) {
       merged.delivery = DEFAULT_CONFIG.delivery;
+    }
+    if (parsed.sdd === undefined) {
+      merged.sdd = { ...DEFAULT_CONFIG.sdd };
     }
 
     return merged;

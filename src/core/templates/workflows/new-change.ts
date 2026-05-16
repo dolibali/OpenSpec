@@ -12,23 +12,23 @@ export function getNewChangeSkillTemplate(): SkillTemplate {
     description: 'Start a new OpenSpec change using the experimental artifact workflow. Use when the user wants to create a new feature, fix, or modification with a structured step-by-step approach.',
     instructions: `Start a new change using the experimental artifact-driven approach.
 
-**Input**: The user's request should include a Jira key plus a change name (kebab-case) OR a description of what they want to build.
+**Input**: The user's request should include a req id plus a change name (kebab-case) OR a description of what they want to build.
 
-Recognize Jira when provided as the first token (e.g., \`DSH-618\`) or in compact forms such as \`jira号是DSH-618\`, \`jira:DSH-618\`, \`jira=DSH-618\`, or \`jiraDSH-618\`. Do not infer Jira from git branches or URLs.
+Recognize req id when provided as the first token (e.g., \`DSH-618\`) or in compact forms such as \`req:DSH-618\`, \`req=DSH-618\`, \`需求号是DSH-618\`, \`需求ID是DSH-618\`, or legacy Jira forms such as \`jira号是DSH-618\`. Do not infer req id from git branches or URLs.
 
 **Steps**
 
-1. **Collect Jira and change intent**
+1. **Collect req id and change intent**
 
-   If no Jira key is present, use the **AskUserQuestion tool** to ask:
-   > "What Jira key should this OpenSpec change use? Provide the key only, like DSH-618."
+   If no req id is present, use the **AskUserQuestion tool** to ask:
+   > "What requirement id should this OpenSpec change use? Provide the id only, like DSH-618. If this change should not include one, say none."
 
    If no clear change intent is provided, use the **AskUserQuestion tool** (open-ended, no preset options) to ask:
    > "What change do you want to work on? Describe what you want to build or fix."
 
-   From the remaining description after removing Jira text, derive a kebab-case name (e.g., "add user authentication" → \`add-user-auth\`).
+   From the remaining description after removing req id text, derive a kebab-case name (e.g., "add user authentication" → \`add-user-auth\`).
 
-   **IMPORTANT**: Do NOT proceed without both a Jira key and enough intent to name the change.
+   **IMPORTANT**: Do NOT proceed without enough intent to name the change. If the req id is unavailable, proceed only after the user confirms it should be omitted.
 
 2. **Determine the workflow schema**
 
@@ -42,8 +42,9 @@ Recognize Jira when provided as the first token (e.g., \`DSH-618\`) or in compac
 
 3. **Create the change directory**
    \`\`\`bash
-   openspec new change "<name>" --jira "<jira>"
+   openspec new change "<name>" --req-id "<req-id>"
    \`\`\`
+   If the user confirmed there is no req id, use \`--omit-req-id\` instead of \`--req-id\`.
    Add \`--schema <name>\` only if the user requested a specific workflow.
    This creates a scaffolded change in the planning home resolved by the CLI.
 
@@ -92,23 +93,23 @@ export function getOpsxNewCommandTemplate(): CommandTemplate {
     tags: ['workflow', 'artifacts', 'experimental'],
     content: `Start a new change using the experimental artifact-driven approach.
 
-**Input**: The argument after \`/opsx:new\` is a Jira key plus the change name (kebab-case), OR a Jira key plus a description of what the user wants to build.
+**Input**: The argument after \`/opsx:new\` is a req id plus the change name (kebab-case), OR a req id plus a description of what the user wants to build.
 
-Recognize Jira when provided as the first token (e.g., \`DSH-618\`) or in compact forms such as \`jira号是DSH-618\`, \`jira:DSH-618\`, \`jira=DSH-618\`, or \`jiraDSH-618\`. Do not infer Jira from git branches or URLs.
+Recognize req id when provided as the first token (e.g., \`DSH-618\`) or in compact forms such as \`req:DSH-618\`, \`req=DSH-618\`, \`需求号是DSH-618\`, \`需求ID是DSH-618\`, or legacy Jira forms such as \`jira号是DSH-618\`. Do not infer req id from git branches or URLs.
 
 **Steps**
 
-1. **Collect Jira and change intent**
+1. **Collect req id and change intent**
 
-   If no Jira key is present, use the **AskUserQuestion tool** to ask:
-   > "What Jira key should this OpenSpec change use? Provide the key only, like DSH-618."
+   If no req id is present, use the **AskUserQuestion tool** to ask:
+   > "What requirement id should this OpenSpec change use? Provide the id only, like DSH-618. If this change should not include one, say none."
 
    If no clear change intent is provided, use the **AskUserQuestion tool** (open-ended, no preset options) to ask:
    > "What change do you want to work on? Describe what you want to build or fix."
 
-   From the remaining description after removing Jira text, derive a kebab-case name (e.g., "add user authentication" → \`add-user-auth\`).
+   From the remaining description after removing req id text, derive a kebab-case name (e.g., "add user authentication" → \`add-user-auth\`).
 
-   **IMPORTANT**: Do NOT proceed without both a Jira key and enough intent to name the change.
+   **IMPORTANT**: Do NOT proceed without enough intent to name the change. If the req id is unavailable, proceed only after the user confirms it should be omitted.
 
 2. **Determine the workflow schema**
 
@@ -122,8 +123,9 @@ Recognize Jira when provided as the first token (e.g., \`DSH-618\`) or in compac
 
 3. **Create the change directory**
    \`\`\`bash
-   openspec new change "<name>" --jira "<jira>"
+   openspec new change "<name>" --req-id "<req-id>"
    \`\`\`
+   If the user confirmed there is no req id, use \`--omit-req-id\` instead of \`--req-id\`.
    Add \`--schema <name>\` only if the user requested a specific workflow.
    This creates a scaffolded change in the planning home resolved by the CLI.
 

@@ -107,13 +107,22 @@ Use a comma-separated tool list when you want to install prompts for more than o
 openspec init --tools codex,claude,cursor
 ```
 
-Now tell your AI: `/opsx:propose <jira-key> <what-you-want-to-build>`
+Configure the enterprise SDD output once per machine:
+
+```bash
+openspec config set sdd.enabled true
+openspec config set sdd.reqIdRequired true
+openspec config set sdd.root specs
+openspec config set sdd.prefix JIRA
+```
+
+Now tell your AI: `/opsx:propose <req-id> <what-you-want-to-build>`
 
 ```text
 /opsx:propose DSH-618 增加登录验证码
 ```
 
-This fork keeps the official OpenSpec change under `openspec/changes/<change-name>` and also mirrors the generated SDD documents to the company review directory `specs/JIRA_<jira-key>_<change-name>`.
+This fork keeps the official OpenSpec change under `openspec/changes/<change-name>` and also mirrors the generated SDD documents to the configured company review directory, by default `specs/JIRA_<req-id>_<change-name>`.
 
 For completed code changes that need company SDD documents generated from the current diff, use:
 

@@ -7,32 +7,40 @@ import {
   buildSddMetadata,
   createSddDocsDirectory,
   parseJiraInput,
+  parseReqIdInput,
   syncSddMirror,
 } from '../../src/core/sdd.js';
+import { saveGlobalConfig } from '../../src/core/global-config.js';
 import { writeChangeMetadata } from '../../src/utils/change-metadata.js';
 
 describe('enterprise SDD mirror', () => {
   let tempDir: string;
+  let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(async () => {
+    originalEnv = { ...process.env };
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'openspec-sdd-'));
+    process.env.XDG_CONFIG_HOME = path.join(tempDir, 'config');
   });
 
   afterEach(async () => {
+    process.env = originalEnv;
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
-  it('parses supported Jira input forms without changing case', () => {
-    expect(parseJiraInput('DSH-618')).toBe('DSH-618');
-    expect(parseJiraInput('jira号是dsh-618')).toBe('dsh-618');
-    expect(parseJiraInput('jira:ABC-123')).toBe('ABC-123');
-    expect(parseJiraInput('jira=ABC-123')).toBe('ABC-123');
+  it('parses supported req id input forms without changing case', () => {
+    expect(parseReqIdInput('DSH-618')).toBe('DSH-618');
+    expect(parseReqIdInput('req:ABC-123')).toBe('ABC-123');
+    expect(parseReqIdInput('req=ABC-123')).toBe('ABC-123');
+    expect(parseReqIdInput('需求号是REQ-1001')).toBe('REQ-1001');
+    expect(parseReqIdInput('需求ID是dsh-618')).toBe('dsh-618');
+    expect(parseReqIdInput('jira号是dsh-618')).toBe('dsh-618');
     expect(parseJiraInput('jiraABC-123')).toBe('ABC-123');
   });
 
-  it('rejects Jira URLs and directory prefixes', () => {
-    expect(() => parseJiraInput('https://jira.example.com/browse/DSH-618')).toThrow(/not a URL/);
-    expect(() => parseJiraInput('JIRA_DSH-618')).toThrow(/JIRA_/);
+  it('rejects req id URLs and directory prefixes', () => {
+    expect(() => parseReqIdInput('https://jira.example.com/browse/DSH-618')).toThrow(/not a URL/);
+    expect(() => parseReqIdInput('JIRA_DSH-618')).toThrow(/JIRA_/);
   });
 
   it('syncs and updates the full change directory mirror', async () => {
@@ -56,6 +64,9 @@ describe('enterprise SDD mirror', () => {
 
     const mirrorDir = path.join(tempDir, 'specs', 'JIRA_DSH-618_add-login-code');
     expect(await fs.readFile(path.join(mirrorDir, 'proposal.md'), 'utf-8')).toBe('# Proposal\n');
+    const mirroredMetadata = await fs.readFile(path.join(mirrorDir, '.openspec.yaml'), 'utf-8');
+    expect(mirroredMetadata).toContain('req_id: DSH-618');
+    expect(mirroredMetadata).not.toContain('jira: DSH-618');
 
     await fs.writeFile(path.join(changeDir, 'design.md'), '# Design\n');
     const second = await syncSddMirror(tempDir, changeName, changesDir);
@@ -100,11 +111,115 @@ describe('enterprise SDD mirror', () => {
 
     expect(result.targetDir).toBe(path.join(tempDir, 'specs', 'JIRA_DSH-618_fix-login-code-error'));
     expect(metadata).toContain('schema: spec-driven');
-    expect(metadata).toContain('jira: DSH-618');
+    expect(metadata).toContain('req_id: DSH-618');
     expect(metadata).toContain('directory: JIRA_DSH-618_fix-login-code-error');
     expect(metadata).toContain('change: fix-login-code-error');
+    expect(metadata).not.toContain('jira: DSH-618');
     expect(metadata).not.toContain('docs-only');
     expect(metadata).not.toContain('generated_from');
+  });
+
+  it('uses global SDD root and prefix settings', async () => {
+    saveGlobalConfig({
+      sdd: {
+        enabled: true,
+        reqIdRequired: true,
+        root: 'specs/archive',
+        prefix: 'REQ',
+      },
+    });
+
+    const result = await createSddDocsDirectory(tempDir, 'fix-login-code-error', 'DSH-618');
+
+    expect(result.targetDir).toBe(
+      path.join(tempDir, 'specs', 'archive', 'REQ_DSH-618_fix-login-code-error')
+    );
+  });
+
+  it('omits empty directory name segments', async () => {
+    saveGlobalConfig({
+      sdd: {
+        enabled: true,
+        reqIdRequired: true,
+        root: 'specs',
+        prefix: '',
+      },
+    });
+
+    const withReqId = await createSddDocsDirectory(tempDir, 'fix-login-code-error', 'DSH-618');
+    expect(withReqId.targetDir).toBe(path.join(tempDir, 'specs', 'DSH-618_fix-login-code-error'));
+
+    const withoutReqId = await createSddDocsDirectory(
+      tempDir,
+      'no-req-id-change',
+      undefined,
+      { omitReqId: true }
+    );
+    expect(withoutReqId.targetDir).toBe(path.join(tempDir, 'specs', 'no-req-id-change'));
+  });
+
+  it('creates a directory without req id when req id is not required', async () => {
+    saveGlobalConfig({
+      sdd: {
+        enabled: true,
+        reqIdRequired: false,
+        root: 'specs',
+        prefix: 'JIRA',
+      },
+    });
+
+    const result = await createSddDocsDirectory(tempDir, 'fix-login-code-error');
+
+    expect(result.targetDir).toBe(path.join(tempDir, 'specs', 'JIRA_fix-login-code-error'));
+    const metadata = await fs.readFile(path.join(result.targetDir, '.openspec.yaml'), 'utf-8');
+    expect(metadata).not.toContain('req_id:');
+  });
+
+  it('skips sync and blocks docs when enterprise SDD output is disabled', async () => {
+    saveGlobalConfig({
+      sdd: {
+        enabled: false,
+        reqIdRequired: true,
+        root: 'specs',
+        prefix: 'JIRA',
+      },
+    });
+
+    await expect(createSddDocsDirectory(tempDir, 'fix-login-code-error', 'DSH-618')).rejects.toThrow(
+      /disabled/
+    );
+    await expect(syncSddMirror(tempDir, 'missing-change')).resolves.toEqual({
+      status: 'skipped',
+      reason: 'disabled',
+    });
+  });
+
+  it('syncs legacy Jira metadata as req id metadata', async () => {
+    const changeName = 'legacy-jira-change';
+    const changesDir = path.join(tempDir, 'openspec', 'changes');
+    const changeDir = path.join(changesDir, changeName);
+    await fs.mkdir(changeDir, { recursive: true });
+    await fs.writeFile(path.join(changeDir, 'proposal.md'), '# Proposal\n');
+    await fs.writeFile(
+      path.join(changeDir, '.openspec.yaml'),
+      `schema: spec-driven
+sdd:
+  jira: DSH-618
+  directory: JIRA_DSH-618_legacy-jira-change
+  change: legacy-jira-change
+`,
+      'utf-8'
+    );
+
+    const result = await syncSddMirror(tempDir, changeName, changesDir);
+
+    expect(result.status).toBe('synced');
+    const mirrorMetadata = await fs.readFile(
+      path.join(tempDir, 'specs', 'JIRA_DSH-618_legacy-jira-change', '.openspec.yaml'),
+      'utf-8'
+    );
+    expect(mirrorMetadata).toContain('req_id: DSH-618');
+    expect(mirrorMetadata).not.toContain('jira: DSH-618');
   });
 
   it('allows updating an existing SDD docs directory only for the same source', async () => {

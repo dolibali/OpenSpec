@@ -1,4 +1,47 @@
 import { z } from 'zod';
+import path from 'node:path';
+
+export const DEFAULT_SDD_CONFIG = {
+  enabled: true,
+  reqIdRequired: true,
+  root: 'specs',
+  prefix: 'JIRA',
+} as const;
+
+export function isValidSddRoot(value: string): boolean {
+  if (value.trim().length === 0 || value !== value.trim()) {
+    return false;
+  }
+
+  if (value === '.' || path.posix.isAbsolute(value) || path.win32.isAbsolute(value)) {
+    return false;
+  }
+
+  return !value.split(/[\\/]+/).some((segment) => segment === '..');
+}
+
+export function isValidSddPrefix(value: string): boolean {
+  return value.length === 0 || /^[A-Za-z0-9_-]+$/.test(value);
+}
+
+const SddConfigSchema = z.object({
+  enabled: z.boolean().optional().default(DEFAULT_SDD_CONFIG.enabled),
+  reqIdRequired: z.boolean().optional().default(DEFAULT_SDD_CONFIG.reqIdRequired),
+  root: z
+    .string()
+    .optional()
+    .default(DEFAULT_SDD_CONFIG.root)
+    .refine(isValidSddRoot, {
+      message: 'must be a project-relative path without absolute paths or .. segments',
+    }),
+  prefix: z
+    .string()
+    .optional()
+    .default(DEFAULT_SDD_CONFIG.prefix)
+    .refine(isValidSddPrefix, {
+      message: 'must be empty or contain only letters, numbers, underscores, and hyphens',
+    }),
+});
 
 /**
  * Zod schema for global OpenSpec configuration.
@@ -21,6 +64,7 @@ export const GlobalConfigSchema = z
     workflows: z
       .array(z.string())
       .optional(),
+    sdd: SddConfigSchema.optional().default(DEFAULT_SDD_CONFIG),
   })
   .passthrough();
 
@@ -33,9 +77,11 @@ export const DEFAULT_CONFIG: GlobalConfigType = {
   featureFlags: {},
   profile: 'core',
   delivery: 'both',
+  sdd: { ...DEFAULT_SDD_CONFIG },
 };
 
 const KNOWN_TOP_LEVEL_KEYS = new Set([...Object.keys(DEFAULT_CONFIG), 'workflows']);
+const KNOWN_SDD_KEYS = new Set(['enabled', 'reqIdRequired', 'root', 'prefix']);
 
 /**
  * Validate a config key path for CLI set operations.
@@ -57,6 +103,18 @@ export function validateConfigKeyPath(path: string): { valid: boolean; reason?: 
     if (rawKeys.length > 2) {
       return { valid: false, reason: 'featureFlags values are booleans and do not support nested keys' };
     }
+    return { valid: true };
+  }
+
+  if (rootKey === 'sdd') {
+    if (rawKeys.length !== 2) {
+      return { valid: false, reason: 'sdd supports exactly one nested key' };
+    }
+
+    if (!KNOWN_SDD_KEYS.has(rawKeys[1])) {
+      return { valid: false, reason: `Unknown sdd key "${rawKeys[1]}"` };
+    }
+
     return { valid: true };
   }
 

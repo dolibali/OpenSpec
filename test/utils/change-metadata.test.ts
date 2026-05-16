@@ -41,6 +41,21 @@ describe('ChangeMetadataSchema', () => {
       const result = ChangeMetadataSchema.safeParse({
         schema: 'spec-driven',
         sdd: {
+          req_id: 'DSH-618',
+          directory: 'JIRA_DSH-618_add-login-code',
+          change: 'add-login-code',
+        },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.sdd?.req_id).toBe('DSH-618');
+      }
+    });
+
+    it('should accept legacy SDD Jira metadata', () => {
+      const result = ChangeMetadataSchema.safeParse({
+        schema: 'spec-driven',
+        sdd: {
           jira: 'DSH-618',
           directory: 'JIRA_DSH-618_add-login-code',
           change: 'add-login-code',

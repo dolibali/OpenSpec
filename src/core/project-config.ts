@@ -39,14 +39,6 @@ export const ProjectConfigSchema = z.object({
     .optional()
     .describe('Per-artifact rules, keyed by artifact ID'),
 
-  // Optional enterprise SDD settings. The fork defaults to requiring Jira
-  // unless this is explicitly set to false.
-  sdd: z
-    .object({
-      required: z.boolean().optional(),
-    })
-    .optional()
-    .describe('Enterprise SDD mirror settings'),
 });
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
@@ -158,30 +150,6 @@ export function readProjectConfig(projectRoot: string): ProjectConfig | null {
         }
       } else {
         console.warn(`Invalid 'rules' field in config (must be object)`);
-      }
-    }
-
-    // Parse SDD settings field
-    if (raw.sdd !== undefined) {
-      if (typeof raw.sdd === 'object' && raw.sdd !== null && !Array.isArray(raw.sdd)) {
-        const parsedSdd: ProjectConfig['sdd'] = {};
-        let hasValidSddConfig = false;
-
-        if ('required' in raw.sdd) {
-          const requiredResult = z.boolean().safeParse((raw.sdd as Record<string, unknown>).required);
-          if (requiredResult.success) {
-            parsedSdd.required = requiredResult.data;
-            hasValidSddConfig = true;
-          } else {
-            console.warn(`Invalid 'sdd.required' field in config (must be boolean)`);
-          }
-        }
-
-        if (hasValidSddConfig) {
-          config.sdd = parsedSdd;
-        }
-      } else {
-        console.warn(`Invalid 'sdd' field in config (must be object)`);
       }
     }
 

@@ -8,25 +8,25 @@ import type { SkillTemplate, CommandTemplate } from '../types.js';
 
 const SDD_DOCS_INSTRUCTIONS = `Create company SDD documents for completed code changes.
 
-Use this when the implementation already exists and the repository still needs the company SDD directory under \`specs/JIRA_<jira>_<change-name>\`.
+Use this when the implementation already exists and the repository still needs the company SDD directory configured by the enterprise SDD settings.
 
-**Input**: The user's request should include a Jira key plus a change name (kebab-case) OR a short description of the completed fix/change.
+**Input**: The user's request should include a req id plus a change name (kebab-case) OR a short description of the completed fix/change.
 
-Recognize Jira when provided as the first token (e.g., \`DSH-618\`) or in compact forms such as \`jira号是DSH-618\`, \`jira:DSH-618\`, \`jira=DSH-618\`, or \`jiraDSH-618\`. Do not infer Jira from git branches or URLs.
+Recognize req id when provided as the first token (e.g., \`DSH-618\`) or in compact forms such as \`req:DSH-618\`, \`req=DSH-618\`, \`需求号是DSH-618\`, \`需求ID是DSH-618\`, or legacy Jira forms such as \`jira号是DSH-618\`. Do not infer req id from git branches or URLs.
 
 **Steps**
 
-1. **Collect Jira and completed-change intent**
+1. **Collect req id and completed-change intent**
 
-   If no Jira key is present, use the **AskUserQuestion tool** to ask:
-   > "What Jira key should these SDD docs use? Provide the key only, like DSH-618."
+   If no req id is present, use the **AskUserQuestion tool** to ask:
+   > "What requirement id should these SDD docs use? Provide the id only, like DSH-618. If these docs should not include one, say none."
 
    If no clear change intent is provided, use the **AskUserQuestion tool** (open-ended, no preset options) to ask:
    > "What completed change should these SDD docs describe?"
 
-   From the remaining description after removing Jira text, derive a kebab-case name (e.g., "fix login captcha error" -> \`fix-login-captcha-error\`).
+   From the remaining description after removing req id text, derive a kebab-case name (e.g., "fix login captcha error" -> \`fix-login-captcha-error\`).
 
-   **IMPORTANT**: Do NOT proceed without both a Jira key and enough intent to name the change.
+   **IMPORTANT**: Do NOT proceed without enough intent to name the change. If the req id is unavailable, proceed only after the user confirms it should be omitted.
 
 2. **Inspect the completed code changes**
 
@@ -49,14 +49,15 @@ Recognize Jira when provided as the first token (e.g., \`DSH-618\`) or in compac
 
    Run:
    \`\`\`bash
-   openspec sdd docs --jira "<jira>" --name "<name>"
+   openspec sdd docs --req-id "<req-id>" --name "<name>"
    \`\`\`
+   If the user confirmed there is no req id, use \`--omit-req-id\` instead of \`--req-id\`.
 
-   This creates \`specs/JIRA_<jira>_<name>/.openspec.yaml\` with the same SDD metadata shape used by normal mirrored changes.
+   Use the printed \`SDD docs directory:\` path as the target directory.
 
 4. **Write standard spec-driven artifacts**
 
-   Write these files under the created \`specs/JIRA_<jira>_<name>/\` directory:
+   Write these files under the created SDD docs directory:
    - \`proposal.md\`
    - \`design.md\`
    - \`tasks.md\`
@@ -106,7 +107,7 @@ Recognize Jira when provided as the first token (e.g., \`DSH-618\`) or in compac
 **Output**
 
 Summarize:
-- Jira key
+- Req id, or note that it was intentionally omitted
 - Created company SDD directory
 - Capability spec path
 - Source used for the docs (current diff, commit range, or user-provided summary)
@@ -121,7 +122,7 @@ Summarize:
 export function getSddDocsSkillTemplate(): SkillTemplate {
   return {
     name: 'openspec-sdd-docs',
-    description: 'Create company SDD documents under specs/JIRA_* for completed code changes using the current git diff and standard spec-driven artifact format.',
+    description: 'Create company SDD documents for completed code changes using the current git diff and standard spec-driven artifact format.',
     instructions: SDD_DOCS_INSTRUCTIONS,
     license: 'MIT',
     compatibility: 'Requires openspec CLI.',
@@ -132,7 +133,7 @@ export function getSddDocsSkillTemplate(): SkillTemplate {
 export function getOpsxSddDocsCommandTemplate(): CommandTemplate {
   return {
     name: 'OPSX: SDD Docs',
-    description: 'Create company SDD docs under specs/JIRA_* for completed code changes',
+    description: 'Create company SDD docs for completed code changes',
     category: 'Workflow',
     tags: ['workflow', 'sdd', 'docs'],
     content: SDD_DOCS_INSTRUCTIONS,

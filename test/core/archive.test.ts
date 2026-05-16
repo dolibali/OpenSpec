@@ -14,12 +14,15 @@ vi.mock('@inquirer/prompts', () => ({
 describe('ArchiveCommand', () => {
   let tempDir: string;
   let archiveCommand: ArchiveCommand;
+  let originalEnv: NodeJS.ProcessEnv;
   const originalConsoleLog = console.log;
 
   beforeEach(async () => {
+    originalEnv = { ...process.env };
     // Create temp directory
     tempDir = path.join(os.tmpdir(), `openspec-archive-test-${Date.now()}`);
     await fs.mkdir(tempDir, { recursive: true });
+    process.env.XDG_CONFIG_HOME = path.join(tempDir, 'config');
     
     // Change to temp directory
     process.chdir(tempDir);
@@ -37,6 +40,7 @@ describe('ArchiveCommand', () => {
   });
 
   afterEach(async () => {
+    process.env = originalEnv;
     // Restore console.log
     console.log = originalConsoleLog;
     

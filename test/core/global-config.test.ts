@@ -12,6 +12,7 @@ import {
   GLOBAL_CONFIG_DIR_NAME,
   GLOBAL_CONFIG_FILE_NAME
 } from '../../src/core/global-config.js';
+import { DEFAULT_SDD_CONFIG } from '../../src/core/config-schema.js';
 import type { Profile, Delivery } from '../../src/core/global-config.js';
 
 describe('global-config', () => {
@@ -140,7 +141,12 @@ describe('global-config', () => {
 
       const config = getGlobalConfig();
 
-      expect(config).toEqual({ featureFlags: {}, profile: 'core', delivery: 'both' });
+      expect(config).toEqual({
+        featureFlags: {},
+        profile: 'core',
+        delivery: 'both',
+        sdd: { ...DEFAULT_SDD_CONFIG },
+      });
     });
 
     it('should not create directory when reading non-existent config', () => {
@@ -177,7 +183,12 @@ describe('global-config', () => {
 
       const config = getGlobalConfig();
 
-      expect(config).toEqual({ featureFlags: {}, profile: 'core', delivery: 'both' });
+      expect(config).toEqual({
+        featureFlags: {},
+        profile: 'core',
+        delivery: 'both',
+        sdd: { ...DEFAULT_SDD_CONFIG },
+      });
     });
 
     it('should log warning for invalid JSON', () => {
@@ -246,6 +257,7 @@ describe('global-config', () => {
 
         expect(config.profile).toBe('core');
         expect(config.delivery).toBe('both');
+        expect(config.sdd).toEqual(DEFAULT_SDD_CONFIG);
         expect(config.workflows).toBeUndefined();
         expect(config.featureFlags?.existingFlag).toBe(true);
       });
@@ -268,6 +280,31 @@ describe('global-config', () => {
         expect(config.profile).toBe('custom');
         expect(config.delivery).toBe('skills');
         expect(config.workflows).toEqual(['propose', 'review']);
+        expect(config.sdd).toEqual(DEFAULT_SDD_CONFIG);
+      });
+
+      it('should merge SDD config with defaults', () => {
+        process.env.XDG_CONFIG_HOME = tempDir;
+        const configDir = path.join(tempDir, 'openspec');
+        const configPath = path.join(configDir, 'config.json');
+
+        fs.mkdirSync(configDir, { recursive: true });
+        fs.writeFileSync(configPath, JSON.stringify({
+          featureFlags: {},
+          sdd: {
+            root: 'specmd',
+            prefix: '',
+          },
+        }));
+
+        const config = getGlobalConfig();
+
+        expect(config.sdd).toEqual({
+          enabled: true,
+          reqIdRequired: true,
+          root: 'specmd',
+          prefix: '',
+        });
       });
 
       it('should round-trip new fields correctly', () => {

@@ -13,7 +13,7 @@ import {
   type PlanningHome,
 } from '../../core/planning-home.js';
 import { validateSchemaExists } from './shared.js';
-import { buildSddMetadata, isSddRequired, syncSddMirror } from '../../core/sdd.js';
+import { buildSddMetadata, resolveSddConfig, syncSddMirror } from '../../core/sdd.js';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -24,6 +24,9 @@ export interface NewChangeOptions {
   goal?: string;
   areas?: string;
   schema?: string;
+  reqId?: string;
+  omitReqId?: boolean;
+  /** @deprecated Use reqId. */
   jira?: string;
 }
 
@@ -60,6 +63,20 @@ function validateWorkspaceAffectedAreas(planningHome: PlanningHome, affectedArea
   }
 }
 
+function resolveReqIdInput(options: NewChangeOptions): string | undefined {
+  const provided = [
+    Boolean(options.reqId),
+    Boolean(options.jira),
+    Boolean(options.omitReqId),
+  ].filter(Boolean).length;
+
+  if (provided > 1) {
+    throw new Error('Use only one of --req-id, --omit-req-id, or deprecated --jira.');
+  }
+
+  return options.reqId ?? options.jira;
+}
+
 export async function newChangeCommand(name: string | undefined, options: NewChangeOptions): Promise<void> {
   if (!name) {
     throw new Error('Missing required argument <name>');
@@ -74,12 +91,20 @@ export async function newChangeCommand(name: string | undefined, options: NewCha
   const projectRoot = planningHome.root;
   const affectedAreas = parseAffectedAreas(options.areas);
   validateWorkspaceAffectedAreas(planningHome, affectedAreas);
-  const sddRequired = isSddRequired(projectRoot);
-  const sddMetadata = options.jira ? buildSddMetadata(name, options.jira) : undefined;
+  const sddConfig = resolveSddConfig();
+  const reqIdInput = resolveReqIdInput(options);
 
-  if (sddRequired && !sddMetadata) {
-    throw new Error("Missing required option --jira. Provide a Jira key such as DSH-618, or set 'sdd.required: false' in openspec/config.yaml.");
+  if (sddConfig.enabled && sddConfig.reqIdRequired && !reqIdInput && !options.omitReqId) {
+    throw new Error(
+      'Missing required option --req-id. Provide a requirement id such as DSH-618, ' +
+        'use --omit-req-id to create a directory without one, or run ' +
+        "'openspec config set sdd.reqIdRequired false'."
+    );
   }
+
+  const sddMetadata = sddConfig.enabled
+    ? buildSddMetadata(name, reqIdInput, sddConfig)
+    : undefined;
 
   // Validate schema if provided
   if (options.schema) {
