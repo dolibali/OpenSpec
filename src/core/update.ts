@@ -271,6 +271,7 @@ export class UpdateCommand {
       console.log();
       console.log(chalk.bold('Getting started:'));
       console.log('  /opsx:new DSH-618  Start a new change');
+      console.log('  /opsx:sdd-docs DSH-618  Document completed code');
       console.log('  /opsx:continue  Create the next artifact');
       console.log('  /opsx:apply     Implement tasks');
       console.log();
@@ -390,8 +391,8 @@ export class UpdateCommand {
       return;
     }
 
-    console.log(chalk.dim('Note: The core profile now includes sync. Your custom profile is preserving the old core workflow set.'));
-    console.log(chalk.dim('Run `openspec config profile core` and then `openspec update` to add sync.'));
+    console.log(chalk.dim('Note: The core profile now includes sync and sdd-docs. Your custom profile is preserving the old core workflow set.'));
+    console.log(chalk.dim('Run `openspec config profile core` and then `openspec update` to add them.'));
   }
 
   /**

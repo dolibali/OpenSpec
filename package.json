@@ -1,6 +1,6 @@
 {
-  "name": "@fission-ai/openspec",
-  "version": "1.3.1",
+  "name": "@dolibali/openspec",
+  "version": "1.0.1",
   "description": "AI-native system for spec-driven development",
   "keywords": [
     "openspec",
@@ -12,7 +12,7 @@
   "homepage": "https://github.com/Fission-AI/OpenSpec",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Fission-AI/OpenSpec"
+    "url": "git+https://github.com/Fission-AI/OpenSpec.git"
   },
   "license": "MIT",
   "author": "OpenSpec Contributors",
@@ -27,7 +27,7 @@
     }
   },
   "bin": {
-    "openspec": "./bin/openspec.js"
+    "openspec": "bin/openspec.js"
   },
   "files": [
     "dist",

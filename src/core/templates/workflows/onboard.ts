@@ -478,6 +478,7 @@ This same rhythm works for any size change—a small fix or a major feature.
  | Command           | What it does                               |
  |-------------------|--------------------------------------------|
  | \`/opsx:propose DSH-618 <name>\` | Create a change and generate all artifacts |
+ | \`/opsx:sdd-docs DSH-618 <name>\` | Create company SDD docs for completed code |
  | \`/opsx:explore\` | Think through problems before/during work  |
  | \`/opsx:apply\`   | Implement tasks from a change              |
  | \`/opsx:archive\` | Archive a completed change                 |
@@ -530,6 +531,7 @@ If the user says they just want to see the commands or skip the tutorial:
  | Command                  | What it does                               |
  |--------------------------|--------------------------------------------|
  | \`/opsx:propose DSH-618 <name>\` | Create a change and generate all artifacts |
+ | \`/opsx:sdd-docs DSH-618 <name>\` | Create company SDD docs for completed code |
  | \`/opsx:explore\`        | Think through problems (no code changes)   |
  | \`/opsx:apply <name>\`   | Implement tasks                            |
  | \`/opsx:archive <name>\` | Archive when done                          |

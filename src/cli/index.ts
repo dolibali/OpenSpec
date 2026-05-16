@@ -36,8 +36,9 @@ import {
   type NewChangeOptions,
 } from '../commands/workflow/index.js';
 import { resolveCurrentPlanningHomeSync } from '../core/planning-home.js';
-import { syncSddMirror } from '../core/sdd.js';
+import { createSddDocsDirectory, syncSddMirror } from '../core/sdd.js';
 import { validateChangeExists } from '../commands/workflow/shared.js';
+import { validateChangeName } from '../utils/change-utils.js';
 import { maybeShowTelemetryNotice, trackCommand, shutdown } from '../telemetry/index.js';
 
 const program = new Command();
@@ -548,6 +549,35 @@ sddCmd
       } else {
         console.log(`SDD mirror skipped: ${result.reason}`);
       }
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+sddCmd
+  .command('docs')
+  .description('Create the enterprise SDD docs directory for a completed change')
+  .option('--jira <key>', 'Jira key for the enterprise SDD docs directory')
+  .option('--name <change>', 'Change name to use for the enterprise SDD docs directory')
+  .action(async (options?: { jira?: string; name?: string }) => {
+    try {
+      if (!options?.jira) {
+        throw new Error('Missing required option --jira. Provide a Jira key such as DSH-618.');
+      }
+      if (!options.name) {
+        throw new Error('Missing required option --name. Provide a kebab-case change name.');
+      }
+
+      const validation = validateChangeName(options.name);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
+
+      const planningHome = resolveCurrentPlanningHomeSync();
+      const result = await createSddDocsDirectory(planningHome.root, options.name, options.jira);
+      console.log(`SDD docs directory: ${path.relative(planningHome.root, result.targetDir)}`);
     } catch (error) {
       console.log();
       ora().fail(`Error: ${(error as Error).message}`);

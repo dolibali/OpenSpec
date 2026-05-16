@@ -72,6 +72,7 @@ const WORKFLOW_TO_SKILL_DIR: Record<string, string> = {
   'verify': 'openspec-verify-change',
   'onboard': 'openspec-onboard',
   'propose': 'openspec-propose',
+  'sdd-docs': 'openspec-sdd-docs',
 };
 
 // -----------------------------------------------------------------------------
@@ -704,6 +705,9 @@ export class InitCommand {
     if (activeWorkflows.includes('propose')) {
       console.log(chalk.bold('Getting started:'));
       console.log('  Start your first change: /opsx:propose DSH-618 "your idea"');
+      if (activeWorkflows.includes('sdd-docs')) {
+        console.log('  Document completed code: /opsx:sdd-docs DSH-618 "what changed"');
+      }
     } else if (activeWorkflows.includes('new')) {
       console.log(chalk.bold('Getting started:'));
       console.log('  Start your first change: /opsx:new DSH-618 "your idea"');

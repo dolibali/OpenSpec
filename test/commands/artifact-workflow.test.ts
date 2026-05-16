@@ -389,6 +389,48 @@ sdd:
       expect(mirroredTasks).toBe('- [x] Task 1\n');
     });
 
+    it('creates the company SDD docs directory through the hidden docs command', async () => {
+      const result = await runCLI(
+        ['sdd', 'docs', '--jira', 'DSH-618', '--name', 'fix-login-code-error'],
+        { cwd: tempDir }
+      );
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('SDD docs directory: specs/JIRA_DSH-618_fix-login-code-error');
+
+      const docsDir = path.join(tempDir, 'specs', 'JIRA_DSH-618_fix-login-code-error');
+      const metadata = await fs.readFile(path.join(docsDir, '.openspec.yaml'), 'utf-8');
+      expect(metadata).toContain('schema: spec-driven');
+      expect(metadata).toContain('jira: DSH-618');
+      expect(metadata).toContain('directory: JIRA_DSH-618_fix-login-code-error');
+      expect(metadata).toContain('change: fix-login-code-error');
+      expect(metadata).not.toContain('docs-only');
+      expect(metadata).not.toContain('generated_from');
+      await expect(fs.stat(path.join(changesDir, 'fix-login-code-error'))).rejects.toMatchObject({
+        code: 'ENOENT',
+      });
+    });
+
+    it('rejects SDD docs directory conflicts from a different source', async () => {
+      const docsDir = path.join(tempDir, 'specs', 'JIRA_DSH-618_fix-login-code-error');
+      await fs.mkdir(docsDir, { recursive: true });
+      await fs.writeFile(
+        path.join(docsDir, '.openspec.yaml'),
+        `schema: spec-driven
+sdd:
+  jira: DSH-618
+  directory: JIRA_DSH-618_other-change
+  change: other-change
+`
+      );
+
+      const result = await runCLI(
+        ['sdd', 'docs', '--jira', 'DSH-618', '--name', 'fix-login-code-error'],
+        { cwd: tempDir }
+      );
+      expect(result.exitCode).toBe(1);
+      expect(getOutput(result)).toContain('does not belong');
+    });
+
     it('creates workspace-planning changes under the workspace root without touching linked repos', async () => {
       const workspaceEnv = {
         XDG_DATA_HOME: path.join(tempDir, 'data'),

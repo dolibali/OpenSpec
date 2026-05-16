@@ -155,13 +155,14 @@ Old instructions content
 
       await updateCommand.execute(testDir);
 
-      // Verify core profile skill files were created/updated (propose, explore, apply, sync, archive)
+      // Verify core profile skill files were created/updated (propose, sdd-docs, explore, apply, sync, archive)
       const coreSkillNames = [
         'openspec-explore',
         'openspec-apply-change',
         'openspec-sync-specs',
         'openspec-archive-change',
         'openspec-propose',
+        'openspec-sdd-docs',
       ];
 
       for (const skillName of coreSkillNames) {
@@ -233,8 +234,8 @@ Old instructions content
 
       await updateCommand.execute(testDir);
 
-      // Verify core profile commands were created (propose, explore, apply, sync, archive)
-      const coreCommandIds = ['explore', 'apply', 'sync', 'archive', 'propose'];
+      // Verify core profile commands were created (propose, sdd-docs, explore, apply, sync, archive)
+      const coreCommandIds = ['explore', 'apply', 'sync', 'archive', 'propose', 'sdd-docs'];
       const commandsDir = path.join(testDir, '.claude', 'commands', 'opsx');
       for (const cmdId of coreCommandIds) {
         const cmdFile = path.join(commandsDir, `${cmdId}.md`);
@@ -1322,6 +1323,7 @@ More user content after markers.
       // Default profile is core, so only core workflows should be generated.
       const skillNames = [
         'openspec-propose',
+        'openspec-sdd-docs',
         'openspec-explore',
         'openspec-apply-change',
         'openspec-sync-specs',
@@ -1446,7 +1448,7 @@ More user content after markers.
         call.map(arg => String(arg)).join(' ')
       );
       expect(calls.some(call =>
-        call.includes('The core profile now includes sync')
+        call.includes('The core profile now includes sync and sdd-docs')
       )).toBe(true);
       expect(calls.some(call =>
         call.includes('openspec config profile core') && call.includes('openspec update')
@@ -1605,7 +1607,7 @@ content
     });
 
     it('should remove workflows outside profile during update sync', async () => {
-      // Set core profile (propose, explore, apply, sync, archive)
+      // Set core profile (propose, sdd-docs, explore, apply, sync, archive)
       setMockConfig({
         featureFlags: {},
         profile: 'core',

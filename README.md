@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://github.com/Fission-AI/OpenSpec/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Fission-AI/OpenSpec/actions/workflows/ci.yml/badge.svg" /></a>
-  <a href="https://www.npmjs.com/package/@fission-ai/openspec"><img alt="npm version" src="https://img.shields.io/npm/v/@fission-ai/openspec?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/@dolibali/openspec"><img alt="npm version" src="https://img.shields.io/npm/v/@dolibali/openspec?style=flat-square" /></a>
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" /></a>
   <a href="https://discord.gg/YctCnvvshC"><img alt="Discord" src="https://img.shields.io/discord/1411657095639601154?style=flat-square&logo=discord&logoColor=white&label=Discord&suffix=%20online" /></a>
 </p>
@@ -18,7 +18,7 @@
 <summary><strong>The most loved spec framework.</strong></summary>
 
 [![Stars](https://img.shields.io/github/stars/Fission-AI/OpenSpec?style=flat-square&label=Stars)](https://github.com/Fission-AI/OpenSpec/stargazers)
-[![Downloads](https://img.shields.io/npm/dm/@fission-ai/openspec?style=flat-square&label=Downloads/mo)](https://www.npmjs.com/package/@fission-ai/openspec)
+[![Downloads](https://img.shields.io/npm/dm/@dolibali/openspec?style=flat-square&label=Downloads/mo)](https://www.npmjs.com/package/@dolibali/openspec)
 [![Contributors](https://img.shields.io/github/contributors/Fission-AI/OpenSpec?style=flat-square&label=Contributors)](https://github.com/Fission-AI/OpenSpec/graphs/contributors)
 
 </details>
@@ -36,7 +36,7 @@ Our philosophy:
 > [!TIP]
 > **New workflow now available!** We've rebuilt OpenSpec with a new artifact-guided workflow.
 >
-> Run `/opsx:propose "your idea"` to get started. → [Learn more here](docs/opsx.md)
+> Run `/opsx:propose DSH-618 "your idea"` to get started with the enterprise SDD workflow. → [Learn more here](docs/opsx.md)
 
 <p align="center">
   Follow <a href="https://x.com/0xTab">@0xTab on X</a> for updates · Join the <a href="https://discord.gg/YctCnvvshC">OpenSpec Discord</a> for help and questions.
@@ -47,8 +47,9 @@ Our philosophy:
 ## See it in action
 
 ```text
-You: /opsx:propose add-dark-mode
+You: /opsx:propose DSH-618 add-dark-mode
 AI:  Created openspec/changes/add-dark-mode/
+     ✓ specs/JIRA_DSH-618_add-dark-mode/ — enterprise SDD mirror
      ✓ proposal.md — why we're doing this, what's changing
      ✓ specs/       — requirements and scenarios
      ✓ design.md    — technical approach
@@ -84,19 +85,43 @@ AI:  Archived to openspec/changes/archive/2025-01-23-add-dark-mode/
 Install OpenSpec globally:
 
 ```bash
-npm install -g @fission-ai/openspec@latest
+npm install -g @dolibali/openspec@latest
+```
+
+Verify the CLI:
+
+```bash
+openspec --version
 ```
 
 Then navigate to your project directory and initialize:
 
 ```bash
 cd your-project
-openspec init
+openspec init --tools codex
 ```
 
-Now tell your AI: `/opsx:propose <what-you-want-to-build>`
+Use a comma-separated tool list when you want to install prompts for more than one AI tool:
 
-If you want the expanded workflow (`/opsx:new`, `/opsx:continue`, `/opsx:ff`, `/opsx:verify`, `/opsx:bulk-archive`, `/opsx:onboard`), select it with `openspec config profile` and apply with `openspec update`.
+```bash
+openspec init --tools codex,claude,cursor
+```
+
+Now tell your AI: `/opsx:propose <jira-key> <what-you-want-to-build>`
+
+```text
+/opsx:propose DSH-618 增加登录验证码
+```
+
+This fork keeps the official OpenSpec change under `openspec/changes/<change-name>` and also mirrors the generated SDD documents to the company review directory `specs/JIRA_<jira-key>_<change-name>`.
+
+For completed code changes that need company SDD documents generated from the current diff, use:
+
+```text
+/opsx:sdd-docs DSH-618 修复登录验证码异常
+```
+
+If you want the expanded workflow (`/opsx:new`, `/opsx:continue`, `/opsx:ff`, `/opsx:verify`, `/opsx:bulk-archive`, `/opsx:onboard`, `/opsx:sdd-docs`), select it with `openspec config profile` and apply with `openspec update`.
 
 > [!NOTE]
 > Not sure if your tool is supported? [View the full list](docs/supported-tools.md) – we support 25+ tools and growing.
@@ -144,7 +169,7 @@ AI coding assistants are powerful but unpredictable when requirements live only 
 **Upgrade the package**
 
 ```bash
-npm install -g @fission-ai/openspec@latest
+npm install -g @dolibali/openspec@latest
 ```
 
 **Refresh agent instructions**

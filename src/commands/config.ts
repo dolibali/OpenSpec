@@ -55,6 +55,10 @@ const WORKFLOW_PROMPT_META: Record<string, WorkflowPromptMeta> = {
     name: 'Propose change',
     description: 'Create proposal, design, and tasks from a request',
   },
+  'sdd-docs': {
+    name: 'SDD docs',
+    description: 'Create company SDD docs from completed code changes',
+  },
   explore: {
     name: 'Explore ideas',
     description: 'Investigate a problem before implementation',

@@ -362,7 +362,7 @@ describe('workspace command', () => {
     expect(readLocalState(setup.workspace.root).workspace_skills).toEqual(
       expect.objectContaining({
         selected_agents: [],
-        last_applied_workflow_ids: ['propose', 'explore', 'apply', 'sync', 'archive'],
+        last_applied_workflow_ids: ['propose', 'sdd-docs', 'explore', 'apply', 'sync', 'archive'],
       })
     );
   });
@@ -413,14 +413,14 @@ describe('workspace command', () => {
       expect.objectContaining({
         profile: 'core',
         delivery: 'commands',
-        workflow_ids: ['propose', 'explore', 'apply', 'sync', 'archive'],
+        workflow_ids: ['propose', 'sdd-docs', 'explore', 'apply', 'sync', 'archive'],
         selected_agents: ['codex'],
         skills_only: true,
         delivery_notice: expect.stringContaining('skills only'),
         refreshed: [
           expect.objectContaining({
             tool_id: 'codex',
-            workflow_ids: ['propose', 'explore', 'apply', 'sync', 'archive'],
+            workflow_ids: ['propose', 'sdd-docs', 'explore', 'apply', 'sync', 'archive'],
           }),
         ],
         removed: [
@@ -447,7 +447,7 @@ describe('workspace command', () => {
         selected_agents: ['codex'],
         last_applied_profile: 'core',
         last_applied_delivery: 'commands',
-        last_applied_workflow_ids: ['propose', 'explore', 'apply', 'sync', 'archive'],
+        last_applied_workflow_ids: ['propose', 'sdd-docs', 'explore', 'apply', 'sync', 'archive'],
       })
     );
 

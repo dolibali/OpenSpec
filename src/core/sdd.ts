@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-import { readChangeMetadata } from '../utils/change-metadata.js';
+import { readChangeMetadata, writeChangeMetadata } from '../utils/change-metadata.js';
 import { readProjectConfig } from './project-config.js';
 
 export interface SddMetadata {
@@ -13,6 +13,11 @@ export interface SddMetadata {
 export type SddSyncResult =
   | { status: 'synced'; targetDir: string }
   | { status: 'skipped'; reason: 'missing-metadata' | 'missing-sdd' };
+
+export interface SddDocsDirectoryResult {
+  targetDir: string;
+  metadata: SddMetadata;
+}
 
 const JIRA_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9]+-\d+[A-Za-z0-9-]*$/;
 const JIRA_INPUT_PATTERN = /^jira(?:号)?(?:是|[:=])?\s*([A-Za-z][A-Za-z0-9]+-\d+[A-Za-z0-9-]*)$/i;
@@ -90,7 +95,11 @@ async function assertSameSddSource(
     const targetMetadata = readChangeMetadata(targetDir, projectRoot);
     const targetSdd = targetMetadata?.sdd;
 
-    if (targetSdd?.change === expected.change && targetSdd.jira === expected.jira) {
+    if (
+      targetSdd?.change === expected.change &&
+      targetSdd.jira === expected.jira &&
+      targetSdd.directory === expected.directory
+    ) {
       return;
     }
   } catch {
@@ -101,6 +110,42 @@ async function assertSameSddSource(
     `SDD mirror target already exists at ${targetDir} but does not belong to change ` +
       `'${expected.change}' with Jira '${expected.jira}'.`
   );
+}
+
+export async function createSddDocsDirectory(
+  projectRoot: string,
+  changeName: string,
+  jiraInput: string
+): Promise<SddDocsDirectoryResult> {
+  const metadata = buildSddMetadata(changeName, jiraInput);
+  const targetDir = getSddTargetDir(projectRoot, metadata);
+
+  try {
+    const stat = await fs.stat(targetDir);
+    if (!stat.isDirectory()) {
+      throw new Error(`SDD docs target exists but is not a directory: ${targetDir}`);
+    }
+    await assertSameSddSource(targetDir, metadata, projectRoot);
+  } catch (error: any) {
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+
+  await fs.mkdir(targetDir, { recursive: true });
+
+  const today = new Date().toISOString().split('T')[0];
+  writeChangeMetadata(
+    targetDir,
+    {
+      schema: 'spec-driven',
+      created: today,
+      sdd: metadata,
+    },
+    projectRoot
+  );
+
+  return { targetDir, metadata };
 }
 
 export async function syncSddMirror(

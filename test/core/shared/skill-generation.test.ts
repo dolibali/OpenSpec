@@ -5,12 +5,13 @@ import {
   getCommandContents,
   generateSkillContent,
 } from '../../../src/core/shared/skill-generation.js';
+import { getOpsxSddDocsCommandTemplate } from '../../../src/core/templates/skill-templates.js';
 
 describe('skill-generation', () => {
   describe('getSkillTemplates', () => {
-    it('should return all 11 skill templates', () => {
+    it('should return all 12 skill templates', () => {
       const templates = getSkillTemplates();
-      expect(templates).toHaveLength(11);
+      expect(templates).toHaveLength(12);
     });
 
     it('should have unique directory names', () => {
@@ -35,6 +36,7 @@ describe('skill-generation', () => {
       expect(dirNames).toContain('openspec-verify-change');
       expect(dirNames).toContain('openspec-onboard');
       expect(dirNames).toContain('openspec-propose');
+      expect(dirNames).toContain('openspec-sdd-docs');
     });
 
     it('should have valid template structure', () => {
@@ -88,9 +90,9 @@ describe('skill-generation', () => {
   });
 
   describe('getCommandTemplates', () => {
-    it('should return all 11 command templates', () => {
+    it('should return all 12 command templates', () => {
       const templates = getCommandTemplates();
-      expect(templates).toHaveLength(11);
+      expect(templates).toHaveLength(12);
     });
 
     it('should have unique IDs', () => {
@@ -115,6 +117,7 @@ describe('skill-generation', () => {
       expect(ids).toContain('verify');
       expect(ids).toContain('onboard');
       expect(ids).toContain('propose');
+      expect(ids).toContain('sdd-docs');
     });
 
     it('should filter by workflow IDs when provided', () => {
@@ -142,9 +145,9 @@ describe('skill-generation', () => {
   });
 
   describe('getCommandContents', () => {
-    it('should return all 11 command contents', () => {
+    it('should return all 12 command contents', () => {
       const contents = getCommandContents();
-      expect(contents).toHaveLength(11);
+      expect(contents).toHaveLength(12);
     });
 
     it('should have valid content structure', () => {
@@ -181,6 +184,25 @@ describe('skill-generation', () => {
       const all = getCommandContents();
       const noFilter = getCommandContents(undefined);
       expect(noFilter).toHaveLength(all.length);
+    });
+  });
+
+  describe('sdd-docs workflow', () => {
+    it('guides agents to create standard company docs from git diff', () => {
+      const template = getOpsxSddDocsCommandTemplate();
+
+      expect(template.content).toContain('git diff --stat');
+      expect(template.content).toContain('git diff');
+      expect(template.content).toContain('openspec sdd docs --jira "<jira>" --name "<name>"');
+      expect(template.content).toContain('proposal.md');
+      expect(template.content).toContain('design.md');
+      expect(template.content).toContain('tasks.md');
+      expect(template.content).toContain('specs/<capability>/spec.md');
+      expect(template.content).toContain('- [x]');
+      expect(template.content).toContain('Write as a design document, not as a code review');
+      expect(template.content).toContain('Do NOT quote, paste, or closely paraphrase source code');
+      expect(template.content).toContain('Risk analysis must describe product, architecture, operations');
+      expect(template.content).toContain('Do not create `openspec/changes/<name>`');
     });
   });
 
