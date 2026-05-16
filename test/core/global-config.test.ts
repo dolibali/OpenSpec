@@ -307,6 +307,57 @@ describe('global-config', () => {
         });
       });
 
+      it('should backfill existing config files with SDD defaults', () => {
+        process.env.XDG_CONFIG_HOME = tempDir;
+        const configDir = path.join(tempDir, 'openspec');
+        const configPath = path.join(configDir, 'config.json');
+
+        fs.mkdirSync(configDir, { recursive: true });
+        fs.writeFileSync(configPath, JSON.stringify({
+          telemetry: {
+            noticeSeen: true,
+            anonymousId: 'test-id',
+          },
+        }));
+
+        const config = getGlobalConfig();
+        const persisted = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+
+        expect(config.sdd).toEqual(DEFAULT_SDD_CONFIG);
+        expect(persisted.telemetry).toEqual({
+          noticeSeen: true,
+          anonymousId: 'test-id',
+        });
+        expect(persisted.featureFlags).toEqual({});
+        expect(persisted.profile).toBe('core');
+        expect(persisted.delivery).toBe('both');
+        expect(persisted.sdd).toEqual(DEFAULT_SDD_CONFIG);
+      });
+
+      it('should preserve explicit SDD values when backfilling missing SDD fields', () => {
+        process.env.XDG_CONFIG_HOME = tempDir;
+        const configDir = path.join(tempDir, 'openspec');
+        const configPath = path.join(configDir, 'config.json');
+
+        fs.mkdirSync(configDir, { recursive: true });
+        fs.writeFileSync(configPath, JSON.stringify({
+          sdd: {
+            root: 'specmd',
+            prefix: '',
+          },
+        }));
+
+        getGlobalConfig();
+        const persisted = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+
+        expect(persisted.sdd).toEqual({
+          enabled: true,
+          reqIdRequired: true,
+          root: 'specmd',
+          prefix: '',
+        });
+      });
+
       it('should round-trip new fields correctly', () => {
         process.env.XDG_CONFIG_HOME = tempDir;
         const originalConfig = {

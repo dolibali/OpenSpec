@@ -33,6 +33,23 @@ const DEFAULT_CONFIG: GlobalConfig = {
   sdd: { ...DEFAULT_SDD_CONFIG },
 };
 
+function hasOwnField(value: object, field: string): boolean {
+  return Object.prototype.hasOwnProperty.call(value, field);
+}
+
+function shouldBackfillGlobalConfig(parsed: Record<string, unknown>): boolean {
+  if (!hasOwnField(parsed, 'featureFlags') || !hasOwnField(parsed, 'profile') || !hasOwnField(parsed, 'delivery')) {
+    return true;
+  }
+
+  const sdd = parsed.sdd;
+  if (typeof sdd !== 'object' || sdd === null || Array.isArray(sdd)) {
+    return true;
+  }
+
+  return Object.keys(DEFAULT_SDD_CONFIG).some((key) => !hasOwnField(sdd, key));
+}
+
 /**
  * Gets the global configuration directory path following XDG Base Directory Specification.
  *
@@ -130,7 +147,7 @@ export function getGlobalConfig(): GlobalConfig {
     }
 
     const content = fs.readFileSync(configPath, 'utf-8');
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(content) as Record<string, unknown>;
     const parsedSdd =
       typeof parsed.sdd === 'object' && parsed.sdd !== null && !Array.isArray(parsed.sdd)
         ? parsed.sdd
@@ -160,6 +177,10 @@ export function getGlobalConfig(): GlobalConfig {
     }
     if (parsed.sdd === undefined) {
       merged.sdd = { ...DEFAULT_CONFIG.sdd };
+    }
+
+    if (shouldBackfillGlobalConfig(parsed)) {
+      saveGlobalConfig(merged);
     }
 
     return merged;
