@@ -283,6 +283,29 @@ describe('global-config', () => {
         expect(config.sdd).toEqual(DEFAULT_SDD_CONFIG);
       });
 
+      it('should upgrade legacy core custom workflow config back to core profile', () => {
+        process.env.XDG_CONFIG_HOME = tempDir;
+        const configDir = path.join(tempDir, 'openspec');
+        const configPath = path.join(configDir, 'config.json');
+
+        fs.mkdirSync(configDir, { recursive: true });
+        fs.writeFileSync(configPath, JSON.stringify({
+          featureFlags: {},
+          profile: 'custom',
+          delivery: 'both',
+          workflows: ['propose', 'explore', 'apply', 'archive'],
+          sdd: { ...DEFAULT_SDD_CONFIG },
+        }));
+
+        const config = getGlobalConfig();
+        const persisted = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+
+        expect(config.profile).toBe('core');
+        expect(config.workflows).toBeUndefined();
+        expect(persisted.profile).toBe('core');
+        expect(persisted.workflows).toBeUndefined();
+      });
+
       it('should merge SDD config with defaults', () => {
         process.env.XDG_CONFIG_HOME = tempDir;
         const configDir = path.join(tempDir, 'openspec');

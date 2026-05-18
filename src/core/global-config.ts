@@ -33,8 +33,29 @@ const DEFAULT_CONFIG: GlobalConfig = {
   sdd: { ...DEFAULT_SDD_CONFIG },
 };
 
+const LEGACY_CORE_WORKFLOWS = ['propose', 'explore', 'apply', 'archive'] as const;
+
 function hasOwnField(value: object, field: string): boolean {
   return Object.prototype.hasOwnProperty.call(value, field);
+}
+
+function matchesWorkflowSet(value: unknown, expected: readonly string[]): boolean {
+  if (!Array.isArray(value) || value.length !== expected.length) {
+    return false;
+  }
+
+  const actual = new Set(value);
+  return actual.size === expected.length && expected.every((workflow) => actual.has(workflow));
+}
+
+function upgradeLegacyCoreCustomProfile(config: GlobalConfig): boolean {
+  if (config.profile !== 'custom' || !matchesWorkflowSet(config.workflows, LEGACY_CORE_WORKFLOWS)) {
+    return false;
+  }
+
+  config.profile = 'core';
+  delete config.workflows;
+  return true;
 }
 
 function shouldBackfillGlobalConfig(parsed: Record<string, unknown>): boolean {
@@ -179,7 +200,8 @@ export function getGlobalConfig(): GlobalConfig {
       merged.sdd = { ...DEFAULT_CONFIG.sdd };
     }
 
-    if (shouldBackfillGlobalConfig(parsed)) {
+    const shouldSave = shouldBackfillGlobalConfig(parsed) || upgradeLegacyCoreCustomProfile(merged);
+    if (shouldSave) {
       saveGlobalConfig(merged);
     }
 
